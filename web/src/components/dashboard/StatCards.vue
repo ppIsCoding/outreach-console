@@ -48,10 +48,15 @@ const deltaUp = computed(() => (summary?.todayCallsDelta ?? 0) >= 0)
 <template>
   <section class="mb-3.5 grid grid-cols-12 gap-3.5" aria-label="今日外呼概览">
     <!-- 主指标：今日外呼量 -->
-    <div class="card col-span-12 flex flex-col overflow-hidden px-5 pb-[18px] pt-4.5 xl:col-span-5">
+    <div class="card col-span-12 flex flex-col overflow-hidden px-5 pb-[18px] pt-4.5 lg:col-span-6 xl:col-span-5">
       <div class="flex items-center gap-1.5 text-xs text-ink3">
         今日外呼量
-        <Info :size="13" class="opacity-60" aria-label="统计口径：今日 00:00 起已拨出通话数" />
+        <Info
+          :size="13"
+          class="opacity-60"
+          title="统计口径：今日 00:00 起已拨出通话数"
+          aria-label="统计口径：今日 00:00 起已拨出通话数"
+        />
       </div>
 
       <div v-if="loading" class="mt-3 space-y-3">
@@ -95,7 +100,7 @@ const deltaUp = computed(() => (summary?.todayCallsDelta ?? 0) >= 0)
     </div>
 
     <!-- 接通率 -->
-    <div class="card col-span-12 px-5 py-4.5 xl:col-span-3">
+    <div class="card col-span-12 px-5 py-4.5 lg:col-span-6 xl:col-span-3">
       <div class="text-xs text-ink3">今日接通率</div>
 
       <div v-if="loading" class="mt-3 flex items-center gap-3">
@@ -155,7 +160,7 @@ const deltaUp = computed(() => (summary?.todayCallsDelta ?? 0) >= 0)
     </div>
 
     <!-- 执行中任务 -->
-    <div class="card col-span-12 px-5 py-4.5 xl:col-span-4">
+    <div class="card col-span-12 px-5 py-4.5 lg:col-span-12 xl:col-span-4">
       <div class="text-xs text-ink3">执行中任务</div>
 
       <div v-if="loading" class="mt-3 space-y-3">
@@ -191,7 +196,7 @@ const deltaUp = computed(() => (summary?.todayCallsDelta ?? 0) >= 0)
               <span class="min-w-0 flex-1 truncate text-ink2">{{ task.name }}</span>
               <span class="num shrink-0 text-[11px] text-ink3">{{ task.progress }}%</span>
             </div>
-            <ProgressBar :value="task.progress" :tone="task.progress < 40 ? 'warn' : 'brand'" />
+            <ProgressBar :value="task.progress" />
           </div>
 
           <div v-if="!summary?.runningTasks?.length" class="py-3 text-center text-xs text-ink4">

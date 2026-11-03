@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import { Plus, RefreshCw } from 'lucide-vue-next'
 import { ApiError } from '@/api/client'
+import { IS_MOCK } from '@/api'
 import type { TaskAction, TaskStatus } from '@/api/types'
 import { useTaskFilters } from '@/composables/useTaskFilters'
 import {
@@ -46,7 +47,47 @@ const totalPages = computed(() => pageData.value?.totalPages ?? 1)
 const denied = computed(() => listQuery.error.value instanceof ApiError && listQuery.error.value.code === 40300)
 const failed = computed(() => listQuery.isError.value && !denied.value)
 const summaryFailed = computed(() => summaryQuery.isError.value)
-const filtered = computed(() => isDirty.value || filters.value.page > 1)
+const filtered = computed(
+  () => isDirty.value || filters.value.page > 1 || (IS_MOCK && ui.scenario === 'emptyFilter'),
+)
+const refreshing = computed(
+  () => listQuery.isFetching.value || summaryQuery.isFetching.value || statsQuery.isFetching.value,
+)
+
+const listError = computed(() => listQuery.error.value)
+const errorCode = computed(() => {
+  const error = listError.value
+  if (!(error instanceof ApiError)) return ''
+  const labels: Record<number, string> = {
+    40300: 'FORBIDDEN',
+    40401: 'NOT_FOUND',
+    40901: 'CONFLICT',
+    50400: 'GATEWAY_TIMEOUT',
+  }
+  return `${error.code} · ${labels[error.code] ?? 'REQUEST_FAILED'}`
+})
+const errorMessage = computed(() =>
+  listError.value instanceof ApiError ? listError.value.message : '',
+)
+
+// 接口会把越界页码夹到最后一页；把真实页码回写到 URL，避免分页器显示 981–24。
+watch(
+  () => pageData.value?.page,
+  (page) => {
+    if (page && page !== filters.value.page) {
+      apply({ page }, { resetPage: false })
+    }
+  },
+)
+
+// 批量操作只作用于当前页，筛选/翻页后清空选择，避免“已选 11 项但只提交 1 项”。
+watch(
+  () => ({ ...filters.value }),
+  () => {
+    selectedIds.value = []
+  },
+  { deep: true },
+)
 
 const detailOpen = computed({
   get: () => Boolean(ui.detailId),
@@ -78,10 +119,16 @@ function askConfirm(options: {
   confirmState.open = true
 }
 
-function refresh() {
-  void listQuery.refetch()
-  void summaryQuery.refetch()
-  void statsQuery.refetch()
+async function refresh() {
+  const results = await Promise.all([
+    listQuery.refetch(),
+    summaryQuery.refetch(),
+    statsQuery.refetch(),
+  ])
+  if (results.some((result) => result.isError)) {
+    ui.toast('刷新失败，请稍后重试', 'error')
+    return
+  }
   ui.toast('数据已刷新', 'info')
 }
 
@@ -107,7 +154,15 @@ function handleAction(id: string, action: TaskAction) {
   const task = tasks.value.find((item) => item.id === id)
   if (!task) return
 
-  const label = action === 'PAUSE' ? '任务已暂停' : action === 'RESUME' ? '任务已恢复执行' : '任务已终止'
+  const labels: Record<TaskAction, string> = {
+    SUBMIT: '任务已提交',
+    START: '任务已开始执行',
+    PAUSE: '任务已暂停',
+    RESUME: '任务已恢复执行',
+    TERMINATE: '任务已终止',
+    CANCEL: '任务已取消',
+  }
+  const label = labels[action]
   statusMutation.mutate(
     { id, action, version: task.version },
     {
@@ -144,21 +199,32 @@ function handleDuplicate(id: string) {
 }
 
 function bulkStatus(action: TaskAction) {
-  const candidates = tasks.value.filter(
-    (task) => selectedIds.value.includes(task.id) && (action === 'PAUSE' ? task.status === 'RUNNING' : task.status !== 'COMPLETED'),
-  )
+  const candidates = tasks.value.filter((task) => {
+    if (!selectedIds.value.includes(task.id)) return false
+    if (action === 'PAUSE') return task.status === 'RUNNING'
+    return task.status === 'RUNNING' || task.status === 'PAUSED'
+  })
 
   if (candidates.length === 0) {
     ui.toast('选中的任务中没有可执行该操作的任务', 'error')
     return
   }
 
-  const run = () => {
-    candidates.forEach((task) => {
-      statusMutation.mutate({ id: task.id, action, version: task.version })
-    })
-    ui.toast(`已提交 ${candidates.length} 个任务`)
+  const run = async () => {
+    const results = await Promise.allSettled(
+      candidates.map((task) =>
+        statusMutation.mutateAsync({ id: task.id, action, version: task.version }),
+      ),
+    )
+    const succeeded = results.filter((result) => result.status === 'fulfilled').length
+    const failed = results.length - succeeded
     selectedIds.value = []
+
+    if (failed > 0) {
+      ui.toast(`已处理 ${succeeded} 个，${failed} 个失败`, 'error')
+      return
+    }
+    ui.toast(`已处理 ${succeeded} 个任务`)
   }
 
   if (action === 'TERMINATE') {
@@ -166,12 +232,12 @@ function bulkStatus(action: TaskAction) {
       title: `终止选中的 ${candidates.length} 个任务？`,
       description: '终止后将立即停止外呼，未拨打的号码不再执行。该操作不可撤销。',
       confirmLabel: '终止任务',
-      action: run,
+      action: () => void run(),
     })
     return
   }
 
-  run()
+  void run()
 }
 
 function clearFilters() {
@@ -190,7 +256,7 @@ function clearFilters() {
 
       <div class="ml-auto flex items-center gap-2">
         <button type="button" class="btn" @click="refresh">
-          <RefreshCw :size="15" :class="listQuery.isFetching.value && 'animate-spin'" />
+          <RefreshCw :size="15" :class="refreshing && 'animate-spin'" />
           刷新
         </button>
         <button type="button" class="btn btn-primary" @click="ui.openCreate()">
@@ -229,9 +295,12 @@ function clearFilters() {
         :tasks="tasks"
         :loading="listQuery.isPending.value"
         :error="failed"
+        :error-code="errorCode"
+        :error-message="errorMessage"
         :denied="denied"
         :selected="selectedIds"
         :filtered="filtered"
+        :size="filters.size"
         @toggle="toggle"
         @toggle-all="toggleAll"
         @detail="ui.openDetail($event)"

@@ -11,16 +11,22 @@ const {
   tasks = [],
   loading = false,
   error = false,
+  errorCode = '',
+  errorMessage = '',
   denied = false,
   selected = [],
   filtered = false,
+  size = 10,
 } = defineProps<{
   tasks?: Task[]
   loading?: boolean
   error?: boolean
+  errorCode?: string
+  errorMessage?: string
   denied?: boolean
   selected?: string[]
   filtered?: boolean
+  size?: number
 }>()
 
 const emit = defineEmits<{
@@ -39,9 +45,32 @@ const allSelected = computed(() => tasks.length > 0 && tasks.every((task) => sel
 const someSelected = computed(() => !allSelected.value && tasks.some((task) => selected.includes(task.id)))
 
 function actionLabel(task: Task): { action: TaskAction; label: string; icon: typeof Pause } | null {
+  if (task.status === 'DRAFT') return { action: 'SUBMIT', label: '提交', icon: Play }
+  if (task.status === 'SCHEDULED') return { action: 'START', label: '执行', icon: Play }
   if (task.status === 'RUNNING') return { action: 'PAUSE', label: '暂停', icon: Pause }
   if (task.status === 'PAUSED') return { action: 'RESUME', label: '恢复', icon: Play }
   return null
+}
+
+function timeInfo(task: Task): { time: string; label: string } {
+  switch (task.status) {
+    case 'RUNNING':
+      return { time: task.startedAt ?? task.createdAt, label: '开始' }
+    case 'SCHEDULED':
+      return { time: task.scheduledAt ?? task.createdAt, label: '计划' }
+    case 'COMPLETED':
+      return { time: task.finishedAt ?? task.updatedAt, label: '完成' }
+    case 'FAILED':
+      return { time: task.finishedAt ?? task.updatedAt, label: '失败' }
+    case 'TERMINATED':
+      return { time: task.finishedAt ?? task.updatedAt, label: '终止' }
+    case 'PAUSED':
+      return { time: task.updatedAt, label: '暂停' }
+    case 'CANCELLED':
+      return { time: task.updatedAt, label: '取消' }
+    default:
+      return { time: task.createdAt, label: '创建' }
+  }
 }
 
 const showState = computed(() => !loading && (error || denied || tasks.length === 0))
@@ -52,32 +81,32 @@ const showState = computed(() => !loading && (error || denied || tasks.length ==
     <table class="w-full min-w-[940px] border-separate border-spacing-0">
       <thead>
         <tr>
-          <th class="w-11 bg-surface2 px-4 py-0 text-left">
+          <th scope="col" class="w-11 bg-surface2 px-4 py-0 text-left">
             <input
               type="checkbox"
-              class="size-3.5 cursor-pointer accent-[#0B6B5F]"
+              class="size-4 cursor-pointer accent-[#0B6B5F]"
               :checked="allSelected"
               :indeterminate.prop="someSelected"
               aria-label="全选当前页任务"
               @change="emit('toggleAll')"
             />
           </th>
-          <th class="h-10 bg-surface2 px-3 text-left text-[11.5px] font-medium tracking-wide text-ink3">任务名称</th>
-          <th class="hidden h-10 bg-surface2 px-3 text-left text-[11.5px] font-medium tracking-wide text-ink3 min-[1400px]:table-cell">话术模板</th>
-          <th class="h-10 bg-surface2 px-3 text-right text-[11.5px] font-medium tracking-wide text-ink3">名单量</th>
-          <th class="h-10 w-[150px] bg-surface2 px-3 text-left text-[11.5px] font-medium tracking-wide text-ink3">执行进度</th>
-          <th class="h-10 bg-surface2 px-3 text-right text-[11.5px] font-medium tracking-wide text-ink3">接通率</th>
-          <th class="h-10 bg-surface2 px-3 text-left text-[11.5px] font-medium tracking-wide text-ink3">状态</th>
-          <th class="h-10 bg-surface2 px-3 text-left text-[11.5px] font-medium tracking-wide text-ink3">计划 / 创建时间</th>
-          <th class="h-10 bg-surface2 px-4 text-right text-[11.5px] font-medium tracking-wide text-ink3">操作</th>
+          <th scope="col" class="h-10 bg-surface2 px-3 text-left text-[11.5px] font-medium tracking-wide text-ink3">任务名称</th>
+          <th scope="col" class="hidden h-10 bg-surface2 px-3 text-left text-[11.5px] font-medium tracking-wide text-ink3 min-[1400px]:table-cell">话术模板</th>
+          <th scope="col" class="h-10 bg-surface2 px-3 text-right text-[11.5px] font-medium tracking-wide text-ink3">名单量</th>
+          <th scope="col" class="h-10 w-[150px] bg-surface2 px-3 text-left text-[11.5px] font-medium tracking-wide text-ink3">执行进度</th>
+          <th scope="col" class="h-10 bg-surface2 px-3 text-right text-[11.5px] font-medium tracking-wide text-ink3">接通率</th>
+          <th scope="col" class="h-10 bg-surface2 px-3 text-left text-[11.5px] font-medium tracking-wide text-ink3">状态</th>
+          <th scope="col" class="h-10 bg-surface2 px-3 text-left text-[11.5px] font-medium tracking-wide text-ink3">计划 / 执行时间</th>
+          <th scope="col" class="h-10 bg-surface2 px-4 text-right text-[11.5px] font-medium tracking-wide text-ink3">操作</th>
         </tr>
       </thead>
 
       <tbody v-if="loading">
-        <tr v-for="index in 8" :key="index" class="border-b border-[#EFEDE7]">
+        <tr v-for="index in size" :key="index" class="border-b border-[#EFEDE7]">
           <td class="px-4 py-4"><div class="skeleton size-3.5" /></td>
           <td class="px-3 py-4"><div class="skeleton h-3.5 w-44" /><div class="skeleton mt-1.5 h-2.5 w-24" /></td>
-          <td class="px-3 py-4"><div class="skeleton h-3 w-20" /></td>
+          <td class="hidden px-3 py-4 min-[1400px]:table-cell"><div class="skeleton h-3 w-20" /></td>
           <td class="px-3 py-4"><div class="skeleton ml-auto h-3 w-12" /></td>
           <td class="px-3 py-4"><div class="skeleton h-1.5 w-full" /></td>
           <td class="px-3 py-4"><div class="skeleton ml-auto h-3 w-10" /></td>
@@ -97,7 +126,7 @@ const showState = computed(() => !loading && (error || denied || tasks.length ==
           <td class="px-4 py-0">
             <input
               type="checkbox"
-              class="size-3.5 cursor-pointer accent-[#0B6B5F]"
+              class="size-4 cursor-pointer accent-[#0B6B5F]"
               :checked="selected.includes(task.id)"
               :aria-label="`选择任务 ${task.name}`"
               @change="emit('toggle', task.id)"
@@ -107,7 +136,7 @@ const showState = computed(() => !loading && (error || denied || tasks.length ==
           <td class="max-w-[260px] px-3 py-0">
             <div class="flex flex-col gap-0.5 py-2.5">
               <span class="truncate font-medium text-ink" :title="task.name">{{ task.name }}</span>
-              <span class="num text-[10.5px] tracking-wide text-ink4">{{ task.id }}</span>
+              <span class="num text-[10.5px] tracking-wide text-ink3">{{ task.id }}</span>
             </div>
           </td>
 
@@ -155,9 +184,9 @@ const showState = computed(() => !loading && (error || denied || tasks.length ==
 
           <td class="px-3 py-0">
             <div class="num whitespace-nowrap text-[11.5px] text-ink3">
-              {{ relativeTime(task.scheduledAt ?? task.createdAt) }}
-              <span class="mt-px block text-[10.5px] text-ink4">
-                {{ task.status === 'RUNNING' ? '进行中' : '计划' }}
+              {{ relativeTime(timeInfo(task).time) }}
+              <span class="mt-px block text-[10.5px] text-ink3">
+                {{ timeInfo(task).label }}
               </span>
             </div>
           </td>
@@ -195,7 +224,7 @@ const showState = computed(() => !loading && (error || denied || tasks.length ==
 
               <button
                 type="button"
-                class="grid size-6 place-items-center rounded-[5px] text-ink3 transition-colors hover:bg-[#EFEDE7] hover:text-ink"
+                class="grid size-6 place-items-center rounded-[5px] text-ink2 transition-colors hover:bg-[#EFEDE7] hover:text-ink"
                 title="复制任务"
                 aria-label="复制任务"
                 @click="emit('duplicate', task.id)"
@@ -220,8 +249,8 @@ const showState = computed(() => !loading && (error || denied || tasks.length ==
       v-else-if="showState && error"
       variant="error"
       title="任务列表加载失败"
-      description="网络请求超时，已自动重试 1 次。已加载的概览数据不会丢失，可以单独重试。"
-      code="50400 · GATEWAY_TIMEOUT"
+      :description="errorMessage || '网络请求超时，已自动重试 1 次。已加载的概览数据不会丢失，可以单独重试。'"
+      :code="errorCode || '50400 · GATEWAY_TIMEOUT'"
       action-label="重新加载"
       @action="emit('retry')"
     />

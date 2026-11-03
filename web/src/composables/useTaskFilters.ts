@@ -22,18 +22,40 @@ const DEFAULTS: TaskFilters = {
   size: 10,
 }
 
+const STATUSES: TaskFilters['status'][] = [
+  'ALL',
+  'DRAFT',
+  'SCHEDULED',
+  'RUNNING',
+  'PAUSED',
+  'COMPLETED',
+  'FAILED',
+  'TERMINATED',
+  'CANCELLED',
+]
+const RANGES: DateRange[] = ['today', '7d', '30d', 'all']
+const PAGE_SIZES = [10, 20, 50]
+
 function readFilters(query: Record<string, unknown>): TaskFilters {
   const num = (value: unknown, fallback: number) => {
     const parsed = Number(value)
     return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback
   }
+  const status = typeof query.status === 'string' && STATUSES.includes(query.status as TaskFilters['status'])
+    ? (query.status as TaskFilters['status'])
+    : DEFAULTS.status
+  const range = typeof query.range === 'string' && RANGES.includes(query.range as DateRange)
+    ? (query.range as DateRange)
+    : DEFAULTS.range
+  const size = PAGE_SIZES.includes(num(query.size, DEFAULTS.size)) ? num(query.size, DEFAULTS.size) : DEFAULTS.size
+
   return {
-    status: (query.status as TaskFilters['status']) || DEFAULTS.status,
+    status,
     keyword: typeof query.q === 'string' ? query.q : '',
     scriptId: typeof query.script === 'string' ? query.script : '',
-    range: (query.range as DateRange) || DEFAULTS.range,
-    page: num(query.page, 1),
-    size: num(query.size, 10),
+    range,
+    page: Math.min(9999, num(query.page, 1)),
+    size,
   }
 }
 

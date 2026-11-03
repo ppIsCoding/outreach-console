@@ -226,7 +226,7 @@ export function toBackendQuery(query: {
     status: query.status && query.status !== 'ALL' ? query.status : undefined,
     keyword: query.keyword,
     scriptId: query.scriptId,
-    dateRange: query.range,
+    dateRange: query.range === 'all' ? undefined : query.range,
     page: query.page,
     size: query.size,
     sort: query.sort,

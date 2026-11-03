@@ -42,19 +42,19 @@ export const STATUS_META: Record<TaskStatus, StatusMeta> = {
   },
   TERMINATED: {
     label: '已终止',
-    badge: 'bg-[#F0EEE8] text-ink3',
+    badge: 'bg-[#F0EEE8] text-ink2',
     dot: 'bg-[#A9AFB9]',
     actions: [],
   },
   CANCELLED: {
     label: '已取消',
-    badge: 'bg-[#F0EEE8] text-ink3',
+    badge: 'bg-[#F0EEE8] text-ink2',
     dot: 'bg-[#A9AFB9]',
     actions: [],
   },
   DRAFT: {
     label: '草稿',
-    badge: 'bg-[#F0EEE8] text-ink3',
+    badge: 'bg-[#F0EEE8] text-ink2',
     dot: 'bg-[#A9AFB9]',
     actions: ['SUBMIT'],
   },

@@ -26,8 +26,8 @@ const { title, subtitle = '', width = '620px' } = defineProps<{
         <header class="flex shrink-0 items-start gap-3 border-b border-line px-6 pb-4 pt-5">
           <div class="min-w-0 flex-1">
             <DialogTitle class="text-base font-semibold leading-tight">{{ title }}</DialogTitle>
-            <DialogDescription v-if="subtitle" class="mt-1 text-xs text-ink3">
-              {{ subtitle }}
+            <DialogDescription :class="subtitle ? 'mt-1 text-xs text-ink3' : 'sr-only'">
+              {{ subtitle || '对话框' }}
             </DialogDescription>
           </div>
           <slot name="badge" />

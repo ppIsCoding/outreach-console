@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import {
   ChartLine,
   ListChecks,
@@ -8,26 +9,40 @@ import {
   Users,
   LayoutGrid,
 } from 'lucide-vue-next'
+import { useSummaryQuery } from '@/composables/useTasks'
+import { useUiStore } from '@/stores/ui'
 
 const groups = [
   {
     label: '工作台',
     items: [
-      { key: 'overview', label: '概览', icon: LayoutGrid, badge: '' },
-      { key: 'tasks', label: '任务看板', icon: ListChecks, badge: '3' },
-      { key: 'scripts', label: '话术管理', icon: MessageSquareText, badge: '' },
-      { key: 'contacts', label: '名单管理', icon: Users, badge: '' },
-      { key: 'records', label: '通话记录', icon: PhoneCall, badge: '' },
+      { key: 'overview', label: '概览', icon: LayoutGrid },
+      { key: 'tasks', label: '任务看板', icon: ListChecks },
+      { key: 'scripts', label: '话术管理', icon: MessageSquareText },
+      { key: 'contacts', label: '名单管理', icon: Users },
+      { key: 'records', label: '通话记录', icon: PhoneCall },
     ],
   },
   {
     label: '分析',
     items: [
-      { key: 'reports', label: '数据报表', icon: ChartLine, badge: '' },
-      { key: 'settings', label: '系统设置', icon: Settings, badge: '' },
+      { key: 'reports', label: '数据报表', icon: ChartLine },
+      { key: 'settings', label: '系统设置', icon: Settings },
     ],
   },
 ]
+
+const ui = useUiStore()
+const { data: summary } = useSummaryQuery()
+const taskBadge = computed(() => {
+  const count = summary.value?.runningCount ?? 0
+  return count > 0 ? String(count) : ''
+})
+
+function handleNav(key: string) {
+  if (key === 'tasks') return
+  ui.toast('该模块暂未开放，当前演示聚焦任务看板', 'info')
+}
 </script>
 
 <template>

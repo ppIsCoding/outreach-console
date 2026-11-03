@@ -4,7 +4,7 @@
 前端 Vue 3 + TypeScript，后端 Spring Boot 3（可选启动），默认以 mock 数据运行，开箱即用。
 
 **代码仓库**：https://github.com/ppIsCoding/outreach-console
-**在线预览**：部署后补充（构建已固定 mock 模式，无需后端）
+**在线预览**：https://outreach-console-tawny.vercel.app （无需后端，打开即用）
 
 ![看板总览](docs/screenshots/01-dashboard.png)
 

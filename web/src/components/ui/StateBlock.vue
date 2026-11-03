@@ -19,7 +19,10 @@ const iconClass = computed(() =>
 </script>
 
 <template>
-  <div class="flex flex-col items-center justify-center gap-3.5 px-6 py-14 text-center">
+  <div
+    class="flex flex-col items-center justify-center gap-3.5 px-6 py-14 text-center"
+    :role="variant === 'empty' ? 'status' : 'alert'"
+  >
     <div class="grid size-[52px] place-items-center rounded-[14px] border" :class="iconClass">
       <component :is="icon" :size="24" :stroke-width="1.4" />
     </div>
@@ -29,7 +32,7 @@ const iconClass = computed(() =>
 
     <span
       v-if="code"
-      class="rounded bg-[#F2F0EA] px-1.5 py-0.5 font-mono text-[11px] text-ink3"
+      class="rounded bg-[#F2F0EA] px-1.5 py-0.5 font-mono text-[11px] text-ink2"
     >
       {{ code }}
     </span>

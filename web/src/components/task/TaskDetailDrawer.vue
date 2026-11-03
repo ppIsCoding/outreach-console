@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { Copy, Pause, Play, Square } from 'lucide-vue-next'
 import type { TaskAction } from '@/api/types'
 import { useDuplicateTaskMutation, useStatusMutation, useTaskDetailQuery } from '@/composables/useTasks'
@@ -7,6 +7,7 @@ import { formatDuration, formatNumber, progressOf } from '@/lib/utils'
 import { STATUS_META } from '@/lib/task-status'
 import { useUiStore } from '@/stores/ui'
 import AppDrawer from '@/components/ui/AppDrawer.vue'
+import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import ProgressBar from '@/components/ui/ProgressBar.vue'
 
@@ -24,11 +25,14 @@ const meta = computed(() => (task.value ? STATUS_META[task.value.status] : null)
 const distribution = computed(() => {
   if (!task.value) return []
   const called = task.value.calledCount
-  const connected = task.value.connectedCount
-  const noAnswer = Math.round(called * 0.28)
-  const rejected = Math.round(called * 0.16)
-  const invalid = Math.round(called * 0.09)
-  const powerOff = Math.max(0, called - connected - noAnswer - rejected - invalid)
+  const connected = Math.min(task.value.connectedCount, called)
+  const unanswered = Math.max(0, called - connected)
+
+  // 未接通部分按固定比例拆分，余数补到“关机”，保证各项之和等于已呼量。
+  const noAnswer = Math.round(unanswered * 0.45)
+  const rejected = Math.round(unanswered * 0.25)
+  const invalid = Math.round(unanswered * 0.15)
+  const powerOff = Math.max(0, unanswered - noAnswer - rejected - invalid)
 
   return [
     { label: '接通', count: connected, color: '#0B6B5F' },
@@ -40,22 +44,83 @@ const distribution = computed(() => {
 })
 
 const intents = computed(() => {
-  const base = task.value?.intentCount ?? 0
-  const total = base * 4.6 || 1
+  const total = task.value?.intentCount ?? 0
+  const high = Math.round(total * 0.35)
+  const medium = Math.round(total * 0.4)
+  const low = Math.max(0, total - high - medium)
+
   return [
-    { label: 'A 高意向', count: base, color: '#0B6B5F' },
-    { label: 'B 中意向', count: Math.round(base * 2.2), color: '#15857A' },
-    { label: 'C 低意向', count: Math.round(base * 1.4), color: '#8FBDB5' },
-  ].map((item) => ({ ...item, percent: Math.round((item.count / total) * 100) }))
+    { label: 'A 高意向', count: high, color: '#0B6B5F' },
+    { label: 'B 中意向', count: medium, color: '#15857A' },
+    { label: 'C 低意向', count: low, color: '#8FBDB5' },
+  ].map((item) => ({ ...item, percent: total ? Math.round((item.count / total) * 100) : 0 }))
 })
+
+const remainingText = computed(() => {
+  if (!task.value) return ''
+  switch (task.value.status) {
+    case 'RUNNING': {
+      const minutes = Math.max(
+        1,
+        Math.round(((task.value.totalContacts - task.value.calledCount) * 45) / 60 / Math.max(1, task.value.concurrency)),
+      )
+      return `剩余约 ${minutes} 分钟`
+    }
+    case 'PAUSED':
+      return '已暂停'
+    case 'SCHEDULED':
+      return '等待调度'
+    case 'DRAFT':
+      return '尚未提交'
+    case 'COMPLETED':
+      return '已完成'
+    case 'FAILED':
+      return '执行异常'
+    case 'TERMINATED':
+      return '已终止'
+    case 'CANCELLED':
+      return '已取消'
+    default:
+      return ''
+  }
+})
+
+const confirmOpen = ref(false)
+const pendingAction = ref<TaskAction>('TERMINATE')
+
+const confirmTitle = computed(() => {
+  const name = task.value?.name ?? '任务'
+  return pendingAction.value === 'CANCEL' ? `取消任务「${name}」？` : `终止任务「${name}」？`
+})
+
+const confirmDescription = computed(() =>
+  pendingAction.value === 'CANCEL'
+    ? '取消后任务将不再执行，已配置的名单与话术不会删除。'
+    : '终止后将立即停止外呼，未拨打的号码不再执行。该操作不可撤销。',
+)
+
+const confirmLabel = computed(() => (pendingAction.value === 'CANCEL' ? '取消任务' : '终止任务'))
+
+function askConfirm(action: 'CANCEL' | 'TERMINATE') {
+  pendingAction.value = action
+  confirmOpen.value = true
+}
 
 function runAction(action: TaskAction) {
   if (!task.value) return
+  const labels: Record<TaskAction, string> = {
+    SUBMIT: '任务已提交',
+    START: '任务已开始执行',
+    PAUSE: '任务已暂停',
+    RESUME: '任务已恢复执行',
+    TERMINATE: '任务已终止',
+    CANCEL: '任务已取消',
+  }
   statusMutation.mutate(
     { id: task.value.id, action, version: task.value.version },
     {
       onSuccess: () => {
-        ui.toast(action === 'PAUSE' ? '任务已暂停' : action === 'RESUME' ? '任务已恢复执行' : '任务已终止')
+        ui.toast(labels[action])
         void detailQuery.refetch()
       },
       onError: (error: Error) => ui.toast(error.message, 'error'),
@@ -131,9 +196,7 @@ function duplicate() {
       </h3>
       <div class="mb-1.5 flex justify-between text-xs">
         <span class="text-ink3">已执行 {{ progressOf(task) }}%</span>
-        <span class="num text-ink2">
-          剩余约 {{ Math.max(1, Math.round(((task.totalContacts - task.calledCount) * 45) / 60 / Math.max(1, task.concurrency))) }} 分钟
-        </span>
+        <span class="num text-ink2">{{ remainingText }}</span>
       </div>
       <ProgressBar :value="progressOf(task)" :height="6" />
 
@@ -185,9 +248,19 @@ function duplicate() {
         type="button"
         class="btn border-[#E8CFC7] text-danger"
         :disabled="statusMutation.isPending.value"
-        @click="runAction('TERMINATE')"
+        @click="askConfirm('TERMINATE')"
       >
         <Square :size="13" /> 终止任务
+      </button>
+
+      <button
+        v-else-if="task && meta?.actions.includes('CANCEL')"
+        type="button"
+        class="btn border-[#E8CFC7] text-danger"
+        :disabled="statusMutation.isPending.value"
+        @click="askConfirm('CANCEL')"
+      >
+        <Square :size="13" /> 取消任务
       </button>
 
       <div class="ml-auto flex gap-2">
@@ -196,7 +269,27 @@ function duplicate() {
         </button>
 
         <button
-          v-if="task?.status === 'RUNNING'"
+          v-if="task?.status === 'DRAFT'"
+          type="button"
+          class="btn btn-primary"
+          :disabled="statusMutation.isPending.value"
+          @click="runAction('SUBMIT')"
+        >
+          <Play :size="14" /> 提交任务
+        </button>
+
+        <button
+          v-else-if="task?.status === 'SCHEDULED'"
+          type="button"
+          class="btn btn-primary"
+          :disabled="statusMutation.isPending.value"
+          @click="runAction('START')"
+        >
+          <Play :size="14" /> 立即执行
+        </button>
+
+        <button
+          v-else-if="task?.status === 'RUNNING'"
           type="button"
           class="btn btn-primary"
           :disabled="statusMutation.isPending.value"
@@ -217,4 +310,13 @@ function duplicate() {
       </div>
     </template>
   </AppDrawer>
+
+  <ConfirmDialog
+    v-model:open="confirmOpen"
+    :title="confirmTitle"
+    :description="confirmDescription"
+    :confirm-label="confirmLabel"
+    danger
+    @confirm="runAction(pendingAction)"
+  />
 </template>

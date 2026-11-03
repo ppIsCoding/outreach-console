@@ -53,7 +53,7 @@ const ROWS: Row[] = [
   ['双11预售加购提醒', 2, 4200, 4200, 40.7, 'COMPLETED', 1500],
   ['高价值客户专属回访', 0, 380, 380, 68.2, 'COMPLETED', 4200],
   ['老客复购邀约', 3, 1100, 1100, 35.9, 'COMPLETED', 4600],
-  ['续费到期预警-12月', 1, 1700, 0, null, 'SCHEDULED', -120],
+  ['续费到期预警-12月', 1, 1700, 0, null, 'SCHEDULED', 5],
   ['流失用户召回', 4, 2600, 2600, 22.6, 'COMPLETED', 5100],
   ['空号清洗-华南区', 5, 4800, 4800, 9.4, 'FAILED', 3800],
   ['名单为空的测试任务', 3, 0, 0, null, 'DRAFT', 8],
@@ -79,6 +79,15 @@ export function buildSeedTasks(): Task[] {
     const line = LINES[index % LINES.length]!
     const connected = rate === null ? 0 : Math.round((called * rate) / 100)
     const createdAt = shiftMinutes(now, -minutesAgo)
+    const startedAt = ['RUNNING', 'PAUSED', 'COMPLETED', 'FAILED'].includes(status)
+      ? shiftMinutes(now, -minutesAgo + 1)
+      : null
+    const finishedAt =
+      status === 'COMPLETED' || status === 'FAILED' ? shiftMinutes(now, -minutesAgo + 30) : null
+    const scheduledAt = status === 'SCHEDULED' ? shiftMinutes(now, Math.max(5, 30 - minutesAgo)) : null
+    const updatedAt =
+      finishedAt ??
+      (status === 'PAUSED' ? shiftMinutes(now, -minutesAgo + 10) : (startedAt ?? createdAt))
     return {
       id: `T20261103${String(index + 1).padStart(3, '0')}`,
       name,
@@ -98,14 +107,12 @@ export function buildSeedTasks(): Task[] {
       retryLimit: index % 3,
       retryIntervalMin: 30,
       callWindow: '09:00-20:00',
-      scheduledAt: status === 'SCHEDULED' ? shiftMinutes(now, minutesAgo) : null,
-      startedAt: ['RUNNING', 'PAUSED', 'COMPLETED', 'FAILED'].includes(status)
-        ? shiftMinutes(now, -minutesAgo - 1)
-        : null,
-      finishedAt: status === 'COMPLETED' || status === 'FAILED' ? shiftMinutes(now, -minutesAgo + 30) : null,
+      scheduledAt,
+      startedAt,
+      finishedAt,
       creatorName: ['李思远', '王雨桐', '陈默'][index % 3]!,
       createdAt,
-      updatedAt: createdAt,
+      updatedAt,
       version: 0,
     }
   })

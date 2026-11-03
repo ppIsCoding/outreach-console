@@ -18,23 +18,29 @@ const emit = defineEmits<{
   'bulk-terminate': []
 }>()
 
+const currentPage = computed(() => Math.min(Math.max(1, page), Math.max(1, totalPages)))
+
 const pages = computed(() => {
   const windowSize = 5
-  const start = Math.max(1, Math.min(page - 2, totalPages - windowSize + 1))
+  const start = Math.max(1, Math.min(currentPage.value - 2, totalPages - windowSize + 1))
   const end = Math.min(totalPages, start + windowSize - 1)
   return Array.from({ length: Math.max(0, end - start + 1) }, (_, index) => start + index)
 })
 
 const rangeText = computed(() => {
   if (total === 0) return '0 条'
-  const from = (page - 1) * size + 1
-  const to = Math.min(page * size, total)
+  const from = (currentPage.value - 1) * size + 1
+  const to = Math.min(currentPage.value * size, total)
   return `${from}–${to} / ${formatNumber(total)}`
 })
 </script>
 
 <template>
-  <div class="flex flex-wrap items-center gap-3 border-t border-line px-4 py-3">
+  <div
+    class="flex flex-wrap items-center gap-3 border-t border-line px-4 py-3"
+    role="navigation"
+    aria-label="任务分页"
+  >
     <template v-if="selectedCount > 0">
       <span class="text-[12.5px] text-ink2">
         已选 <b class="num text-brand">{{ selectedCount }}</b> 项
@@ -64,9 +70,9 @@ const rangeText = computed(() => {
       <button
         type="button"
         class="grid size-7 place-items-center rounded-md text-ink2 transition-colors hover:bg-[#F0EEE8] disabled:cursor-not-allowed disabled:opacity-35"
-        :disabled="page <= 1"
+        :disabled="currentPage <= 1"
         aria-label="上一页"
-        @click="emit('update:page', page - 1)"
+        @click="emit('update:page', currentPage - 1)"
       >
         <ChevronLeft :size="14" />
       </button>
@@ -76,8 +82,8 @@ const rangeText = computed(() => {
         :key="item"
         type="button"
         class="num grid h-7 min-w-7 place-items-center rounded-md px-1.5 text-xs transition-colors"
-        :class="item === page ? 'bg-brand text-white' : 'text-ink2 hover:bg-[#F0EEE8]'"
-        :aria-current="item === page ? 'page' : undefined"
+        :class="item === currentPage ? 'bg-brand text-white' : 'text-ink2 hover:bg-[#F0EEE8]'"
+        :aria-current="item === currentPage ? 'page' : undefined"
         @click="emit('update:page', item)"
       >
         {{ item }}
@@ -86,9 +92,9 @@ const rangeText = computed(() => {
       <button
         type="button"
         class="grid size-7 place-items-center rounded-md text-ink2 transition-colors hover:bg-[#F0EEE8] disabled:cursor-not-allowed disabled:opacity-35"
-        :disabled="page >= totalPages"
+        :disabled="currentPage >= totalPages"
         aria-label="下一页"
-        @click="emit('update:page', page + 1)"
+        @click="emit('update:page', currentPage + 1)"
       >
         <ChevronRight :size="14" />
       </button>

@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { setScenario, type Scenario } from '@/api/mock/db'
+import { getScenario, setScenario, type Scenario } from '@/api/mock/db'
 
 export type ToastType = 'success' | 'error' | 'info'
 
@@ -16,7 +16,7 @@ export const useUiStore = defineStore('ui', {
     createOpen: false,
     detailId: null as string | null,
     toasts: [] as Toast[],
-    scenario: 'normal' as Scenario,
+    scenario: getScenario(),
   }),
 
   actions: {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, nextTick, ref } from 'vue'
 import { FILTER_TABS } from '@/lib/task-status'
 import type { StatusCount, TaskStatus } from '@/api/types'
 
@@ -11,16 +11,41 @@ const { status, counts = [] } = defineProps<{
 const emit = defineEmits<{ change: [status: TaskStatus | 'ALL'] }>()
 
 const countMap = computed(() => new Map(counts.map((item) => [item.status, item.count])))
+const tabButtons = ref<HTMLButtonElement[]>([])
+
+function onKeydown(event: KeyboardEvent) {
+  if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return
+  event.preventDefault()
+
+  const current = FILTER_TABS.findIndex((tab) => tab.key === status)
+  let next = current
+  if (event.key === 'ArrowLeft') next = (current - 1 + FILTER_TABS.length) % FILTER_TABS.length
+  if (event.key === 'ArrowRight') next = (current + 1) % FILTER_TABS.length
+  if (event.key === 'Home') next = 0
+  if (event.key === 'End') next = FILTER_TABS.length - 1
+
+  const target = FILTER_TABS[next]
+  if (!target) return
+  emit('change', target.key)
+  void nextTick(() => tabButtons.value[next]?.focus())
+}
 </script>
 
 <template>
-  <div class="flex items-center gap-0.5 overflow-x-auto border-b border-line px-4" role="tablist" aria-label="按状态筛选">
+  <div
+    class="flex items-center gap-0.5 overflow-x-auto border-b border-line px-4"
+    role="tablist"
+    aria-label="按状态筛选"
+    @keydown="onKeydown"
+  >
     <button
       v-for="tab in FILTER_TABS"
       :key="tab.key"
+      ref="tabButtons"
       type="button"
       role="tab"
       :aria-selected="status === tab.key"
+      :tabindex="status === tab.key ? 0 : -1"
       class="relative flex shrink-0 items-center gap-1.5 px-2.5 py-3 text-[13px] transition-colors"
       :class="status === tab.key ? 'font-medium text-brand' : 'text-ink2 hover:text-ink'"
       @click="emit('change', tab.key)"
@@ -28,7 +53,7 @@ const countMap = computed(() => new Map(counts.map((item) => [item.status, item.
       {{ tab.label }}
       <span
         class="num rounded px-1.5 py-px text-[10.5px] leading-normal"
-        :class="status === tab.key ? 'bg-brand-soft text-brand' : 'bg-[#F0EEE8] text-ink3'"
+        :class="status === tab.key ? 'bg-brand-soft text-brand' : 'bg-[#F0EEE8] text-ink2'"
       >
         {{ countMap.get(tab.key) ?? 0 }}
       </span>

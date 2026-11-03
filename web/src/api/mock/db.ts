@@ -44,6 +44,16 @@ export function getScenario(): Scenario {
 let tasks: Task[] = buildSeedTasks()
 let seq = tasks.length
 
+/** 本地时间 `yyyy-MM-dd HH:mm:ss`（不能用 toISOString，那是 UTC，会比本地慢 8 小时） */
+function nowStamp(): string {
+  const now = new Date()
+  const pad = (value: number) => String(value).padStart(2, '0')
+  return (
+    `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ` +
+    `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`
+  )
+}
+
 export function resetDb() {
   tasks = buildSeedTasks()
   seq = tasks.length
@@ -58,10 +68,19 @@ function matches(task: Task, query: TaskQuery): boolean {
   if (query.scriptId && task.scriptId !== query.scriptId) return false
   const kw = query.keyword?.trim().toLowerCase()
   if (kw && !task.name.toLowerCase().includes(kw) && !task.id.toLowerCase().includes(kw)) return false
-  if (query.range === 'today') {
-    const today = new Date().toISOString().slice(0, 10)
-    if (!task.createdAt.startsWith(today)) return false
+
+  // 时间范围按本地自然日计算，避免 UTC 在东八区凌晨把“今天”算错。
+  if (query.range && query.range !== 'all') {
+    const createdAt = new Date(task.createdAt.replace(' ', 'T'))
+    if (Number.isNaN(createdAt.getTime())) return true
+
+    const start = new Date()
+    start.setHours(0, 0, 0, 0)
+    if (query.range === '7d') start.setDate(start.getDate() - 6)
+    if (query.range === '30d') start.setDate(start.getDate() - 29)
+    if (createdAt < start) return false
   }
+
   return true
 }
 
@@ -90,7 +109,7 @@ export function lines() {
 }
 
 export function taskStats(): StatusCount[] {
-  if (scenario === 'empty') return [{ status: 'ALL', count: 0 }]
+  if (getScenario() === 'empty') return [{ status: 'ALL', count: 0 }]
 
   const counts = new Map<TaskStatus, number>()
   for (const task of tasks) counts.set(task.status, (counts.get(task.status) ?? 0) + 1)
@@ -128,7 +147,7 @@ function buildEvents(task: Task): TaskEvent[] {
 }
 
 export function taskSummary(): Summary {
-  if (scenario === 'empty') {
+  if (getScenario() === 'empty') {
     return {
       todayCalls: 0,
       todayCallsDelta: 0,
@@ -192,7 +211,7 @@ export function patchStatus(id: string, action: TaskAction, version: number): Ta
 
   task.status = next
   task.version += 1
-  task.updatedAt = new Date().toISOString().slice(0, 19).replace('T', ' ')
+  task.updatedAt = nowStamp()
   if (next === 'RUNNING') task.startedAt ??= task.updatedAt
   if (next === 'COMPLETED' || next === 'TERMINATED') task.finishedAt = task.updatedAt
   return { ...task }
@@ -203,7 +222,7 @@ export function createTask(payload: CreateTaskPayload): Task {
   seq += 1
   const now = new Date()
   const stamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`
-  const createdAt = now.toISOString().slice(0, 19).replace('T', ' ')
+  const createdAt = nowStamp()
   const task: Task = {
     id: `T${stamp}${String(seq).padStart(3, '0')}`,
     name: payload.name,
@@ -241,7 +260,7 @@ export function duplicateTask(id: string): Task {
   seq += 1
   const now = new Date()
   const stamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`
-  const createdAt = now.toISOString().slice(0, 19).replace('T', ' ')
+  const createdAt = nowStamp()
   const copy: Task = {
     ...source,
     id: `T${stamp}${String(seq).padStart(3, '0')}`,
@@ -314,7 +333,7 @@ function tick() {
     if (task.status !== 'RUNNING') continue
     if (task.calledCount >= task.totalContacts) {
       task.status = 'COMPLETED'
-      task.finishedAt = new Date().toISOString().slice(0, 19).replace('T', ' ')
+      task.finishedAt = nowStamp()
       listeners.forEach((listener) =>
         listener({ taskId: task.id, calledCount: task.calledCount, connectedCount: task.connectedCount, status: task.status }),
       )
