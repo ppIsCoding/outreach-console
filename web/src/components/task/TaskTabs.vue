@@ -57,10 +57,7 @@ function onKeydown(event: KeyboardEvent) {
       >
         {{ countMap.get(tab.key) ?? 0 }}
       </span>
-      <span
-        v-if="status === tab.key"
-        class="absolute inset-x-2 -bottom-px h-0.5 rounded-t bg-brand"
-      />
+      <span v-if="status === tab.key" class="absolute inset-x-2 -bottom-px h-0.5 rounded-t bg-brand" />
     </button>
   </div>
 </template>

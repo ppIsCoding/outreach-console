@@ -40,10 +40,7 @@ const form = reactive({
 })
 
 const selectedLine = computed(() => lines.value?.find((line) => line.id === form.lineId))
-const lineCapacity = computed(() => selectedLine.value?.capacity ?? 50)
-const lineAvailable = computed(() =>
-  selectedLine.value ? selectedLine.value.capacity - selectedLine.value.used : 50,
-)
+const lineAvailable = computed(() => (selectedLine.value ? selectedLine.value.capacity - selectedLine.value.used : 50))
 
 const estimate = computed(() => {
   const remaining = Math.max(0, form.totalContacts)
@@ -63,9 +60,21 @@ watch(open, (value) => {
   form.dedupe = true
   form.skipRecent = true
   form.scheduleMode = 'NOW'
+  form.scheduledAt = ''
   form.concurrency = 20
   form.retryLimit = 1
   form.retryIntervalMin = 30
+  form.callWindowStart = '09:00'
+  form.callWindowEnd = '20:00'
+})
+
+// 抽屉可能在元数据请求完成前打开，数据到达后补上默认选项。
+watch(scripts, (value) => {
+  if (open.value && !form.scriptId && value?.length) form.scriptId = value[0]!.id
+})
+
+watch(lines, (value) => {
+  if (open.value && !form.lineId && value?.length) form.lineId = value[0]!.id
 })
 
 function validateStep(current: number): boolean {
@@ -94,8 +103,28 @@ function validateStep(current: number): boolean {
   return Object.keys(errors).length === 0
 }
 
+const FIELD_IDS: Record<string, string> = {
+  name: 'task-name',
+  scriptId: 'task-script',
+  lineId: 'task-line',
+  totalContacts: 'task-contacts',
+  concurrency: 'task-concurrency',
+  retryLimit: 'task-retry',
+  scheduledAt: 'task-scheduled',
+  callWindow: 'task-call-window-start',
+}
+
+function focusFirstError() {
+  const first = Object.keys(errors)[0]
+  const id = first ? FIELD_IDS[first] : undefined
+  if (id) document.getElementById(id)?.focus()
+}
+
 function next() {
-  if (!validateStep(step.value)) return
+  if (!validateStep(step.value)) {
+    focusFirstError()
+    return
+  }
   if (step.value < TOTAL_STEPS) step.value += 1
   else submit()
 }
@@ -128,7 +157,16 @@ function submit() {
       ui.toast('任务已创建，等待调度执行')
       open.value = false
     },
-    onError: (error: Error) => ui.toast(error.message || '创建失败，请重试', 'error'),
+    onError: (error: Error) => {
+      if (error instanceof ApiError && error.fields) {
+        Object.keys(errors).forEach((key) => delete errors[key])
+        Object.assign(errors, error.fields)
+        ui.toast('请检查表单填写', 'error')
+        focusFirstError()
+        return
+      }
+      ui.toast(error.message || '创建失败，请重试', 'error')
+    },
   })
 }
 </script>
@@ -175,7 +213,7 @@ function submit() {
           aria-describedby="task-name-hint"
           maxlength="30"
         />
-        <p id="task-name-hint" class="mt-1.5 text-[11.5px]" :class="errors.name ? 'text-danger' : 'text-ink4'">
+        <p id="task-name-hint" class="mt-1.5 text-[11.5px]" :class="errors.name ? 'text-danger' : 'text-ink3'">
           {{ errors.name || `${form.name.length} / 30 字符，同一创建人下不可重名` }}
         </p>
       </div>
@@ -189,7 +227,7 @@ function submit() {
             {{ script.name }} {{ script.version }} · {{ script.industry }}
           </option>
         </select>
-        <p class="mt-1.5 text-[11.5px] text-ink4">话术模板决定机器人的开场白与对话分支</p>
+        <p class="mt-1.5 text-[11.5px] text-ink3">话术模板决定机器人的开场白与对话分支</p>
       </div>
 
       <div>
@@ -259,11 +297,22 @@ function submit() {
         </div>
       </div>
 
-      <div class="rounded-[10px] border-[1.5px] border-dashed border-line-strong bg-surface2 px-4 py-6 text-center">
-        <p class="text-[13px] text-ink2">
-          拖拽文件到此处，或 <span class="cursor-pointer font-medium text-brand">点击选择</span>
+      <div
+        v-if="form.source === 'UPLOAD'"
+        class="rounded-[10px] border-[1.5px] border-dashed border-line-strong bg-surface2 px-4 py-6 text-center"
+      >
+        <p class="text-[13px] text-ink2">名单文件上传将在接入文件服务后开放</p>
+        <p class="mt-1.5 text-[11.5px] text-ink3">
+          当前可先填写号码数量用于演示；需包含「手机号」列，单次上限 50,000 条
         </p>
-        <p class="mt-1.5 text-[11.5px] text-ink4">需包含「手机号」列，单次上限 50,000 条</p>
+      </div>
+
+      <div
+        v-else
+        class="rounded-[10px] border-[1.5px] border-dashed border-line-strong bg-surface2 px-4 py-6 text-center"
+      >
+        <p class="text-[13px] text-ink2">号码池选择将在接入名单管理后开放</p>
+        <p class="mt-1.5 text-[11.5px] text-ink3">当前可先填写号码数量用于演示</p>
       </div>
 
       <div>
@@ -277,11 +326,10 @@ function submit() {
           max="50000"
           :aria-invalid="Boolean(errors.totalContacts)"
         />
-        <p class="mt-1.5 text-[11.5px]" :class="errors.totalContacts ? 'text-danger' : 'text-ok'">
+        <p class="mt-1.5 text-[11.5px]" :class="errors.totalContacts ? 'text-danger' : 'text-ink3'">
           <template v-if="errors.totalContacts">{{ errors.totalContacts }}</template>
           <template v-else>
-            已解析 {{ formatNumber(form.totalContacts + 446) }} 条 · 去重后
-            {{ formatNumber(form.totalContacts) }} 条
+            当前按 {{ formatNumber(form.totalContacts) }} 条估算，实际上传/圈选结果会覆盖此值
           </template>
         </p>
       </div>
@@ -290,7 +338,7 @@ function submit() {
         <label class="flex cursor-pointer items-center gap-3 border-b border-dashed border-line py-3">
           <span class="flex-1">
             <span class="block text-[12.5px]">自动去重</span>
-            <span class="block text-[11px] text-ink4">按手机号去重，保留最新记录</span>
+            <span class="block text-[11px] text-ink3">按手机号去重，保留最新记录</span>
           </span>
           <input v-model="form.dedupe" type="checkbox" class="peer sr-only" />
           <span
@@ -301,7 +349,7 @@ function submit() {
         <label class="flex cursor-pointer items-center gap-3 py-3">
           <span class="flex-1">
             <span class="block text-[12.5px]">过滤近 7 天已呼号码</span>
-            <span class="block text-[11px] text-ink4">避免重复骚扰，提升客户体验</span>
+            <span class="block text-[11px] text-ink3">避免重复骚扰，提升客户体验</span>
           </span>
           <input v-model="form.skipRecent" type="checkbox" class="peer sr-only" />
           <span
@@ -313,7 +361,9 @@ function submit() {
       <div class="flex gap-2.5 rounded-lg bg-info-soft px-3 py-2.5 text-xs leading-relaxed text-info">
         <Info :size="15" class="mt-px shrink-0" />
         <span>
-          本次将外呼 <b class="num">{{ formatNumber(form.totalContacts) }}</b> 个号码，其中 446 个因近期已呼被过滤。
+          本次将外呼
+          <b class="num">{{ formatNumber(form.totalContacts) }}</b>
+          个号码；去重与近期已呼过滤在接入名单服务后按实际解析结果执行。
         </span>
       </div>
     </div>
@@ -325,9 +375,9 @@ function submit() {
         <div class="grid grid-cols-3 gap-2">
           <button
             v-for="option in [
-              { value: 'NOW', label: '立即执行', desc: '提交后排队' },
-              { value: 'SCHEDULED', label: '定时执行', desc: '指定开始时间' },
-              { value: 'RECURRING', label: '周期执行', desc: '每天 / 每周' },
+              { value: 'NOW', label: '立即执行', desc: '提交后排队', disabled: false },
+              { value: 'SCHEDULED', label: '定时执行', desc: '指定开始时间', disabled: false },
+              { value: 'RECURRING', label: '周期执行', desc: '即将支持', disabled: true },
             ]"
             :key="option.value"
             type="button"
@@ -335,10 +385,14 @@ function submit() {
             :class="
               form.scheduleMode === option.value
                 ? 'border-brand bg-brand-soft shadow-[inset_0_0_0_1px_var(--color-brand)]'
-                : 'border-line bg-white hover:bg-surface2'
+                : option.disabled
+                  ? 'cursor-not-allowed border-line bg-surface2 text-ink3'
+                  : 'border-line bg-white hover:bg-surface2'
             "
             :aria-pressed="form.scheduleMode === option.value"
-            @click="form.scheduleMode = option.value as typeof form.scheduleMode"
+            :aria-disabled="option.disabled"
+            :disabled="option.disabled"
+            @click="!option.disabled && (form.scheduleMode = option.value as typeof form.scheduleMode)"
           >
             <span class="block text-[12.5px] font-medium">{{ option.label }}</span>
             <span class="mt-0.5 block text-[11px] text-ink3">{{ option.desc }}</span>
@@ -367,10 +421,10 @@ function submit() {
             type="number"
             class="input"
             min="1"
-            :max="lineCapacity"
+            :max="lineAvailable"
             :aria-invalid="Boolean(errors.concurrency)"
           />
-          <p class="mt-1.5 text-[11.5px]" :class="errors.concurrency ? 'text-danger' : 'text-ink4'">
+          <p class="mt-1.5 text-[11.5px]" :class="errors.concurrency ? 'text-danger' : 'text-ink3'">
             {{ errors.concurrency || `上限 ${lineAvailable}，受线路剩余并发限制` }}
           </p>
         </div>
@@ -389,7 +443,12 @@ function submit() {
       <div class="grid grid-cols-2 gap-3.5">
         <div>
           <label for="task-interval" class="mb-1.5 block text-[12.5px] font-medium text-ink2">重呼间隔</label>
-          <select id="task-interval" v-model.number="form.retryIntervalMin" class="input select">
+          <select
+            id="task-interval"
+            v-model.number="form.retryIntervalMin"
+            class="input select"
+            :disabled="form.retryLimit === 0"
+          >
             <option :value="15">15 分钟</option>
             <option :value="30">30 分钟</option>
             <option :value="60">1 小时</option>
@@ -400,8 +459,14 @@ function submit() {
         <div>
           <span class="mb-1.5 block text-[12.5px] font-medium text-ink2">呼叫时段</span>
           <div class="flex items-center gap-1.5">
-            <input v-model="form.callWindowStart" type="time" class="input" aria-label="呼叫时段开始" />
-            <span class="text-ink4">–</span>
+            <input
+              id="task-call-window-start"
+              v-model="form.callWindowStart"
+              type="time"
+              class="input"
+              aria-label="呼叫时段开始"
+            />
+            <span class="text-ink3">–</span>
             <input v-model="form.callWindowEnd" type="time" class="input" aria-label="呼叫时段结束" />
           </div>
           <p v-if="errors.callWindow" class="mt-1.5 text-[11.5px] text-danger">{{ errors.callWindow }}</p>
@@ -434,7 +499,7 @@ function submit() {
           <span class="text-[11.5px] text-ink3">预计耗时</span>
           <span class="num text-lg font-semibold text-brand">{{ estimate }}</span>
         </div>
-        <p class="mt-1 text-[11px] text-ink4">按平均通话 45s、并发 {{ form.concurrency }} 估算</p>
+        <p class="mt-1 text-[11px] text-ink3">按平均通话 45s、并发 {{ form.concurrency }} 估算</p>
       </div>
 
       <div class="flex gap-2.5 rounded-lg bg-warn-soft px-3 py-2.5 text-xs leading-relaxed text-warn">
@@ -444,11 +509,19 @@ function submit() {
     </div>
 
     <template #footer>
-      <span class="text-xs text-ink4">共 {{ TOTAL_STEPS }} 步，当前第 {{ step }} 步</span>
+      <span class="text-xs text-ink3">共 {{ TOTAL_STEPS }} 步，当前第 {{ step }} 步</span>
       <div class="ml-auto flex gap-2">
         <button v-if="step > 1" type="button" class="btn" @click="back">上一步</button>
         <button type="button" class="btn btn-primary" :disabled="createMutation.isPending.value" @click="next">
-          {{ step === TOTAL_STEPS ? (createMutation.isPending.value ? '提交中…' : '提交并开始') : '下一步' }}
+          {{
+            step === TOTAL_STEPS
+              ? createMutation.isPending.value
+                ? '提交中…'
+                : form.scheduleMode === 'SCHEDULED'
+                  ? '提交并排队'
+                  : '提交并开始'
+              : '下一步'
+          }}
         </button>
       </div>
     </template>

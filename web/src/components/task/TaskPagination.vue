@@ -3,7 +3,13 @@ import { computed } from 'vue'
 import { ChevronLeft, ChevronRight } from 'lucide-vue-next'
 import { formatNumber } from '@/lib/utils'
 
-const { page, size, total, totalPages, selectedCount = 0 } = defineProps<{
+const {
+  page,
+  size,
+  total,
+  totalPages,
+  selectedCount = 0,
+} = defineProps<{
   page: number
   size: number
   total: number
@@ -36,11 +42,7 @@ const rangeText = computed(() => {
 </script>
 
 <template>
-  <div
-    class="flex flex-wrap items-center gap-3 border-t border-line px-4 py-3"
-    role="navigation"
-    aria-label="任务分页"
-  >
+  <div class="flex flex-wrap items-center gap-3 border-t border-line px-4 py-3" role="navigation" aria-label="任务分页">
     <template v-if="selectedCount > 0">
       <span class="text-[12.5px] text-ink2">
         已选 <b class="num text-brand">{{ selectedCount }}</b> 项

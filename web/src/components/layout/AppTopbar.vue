@@ -22,9 +22,7 @@ const stateMeta = computed(() => {
 </script>
 
 <template>
-  <header
-    class="flex h-14 shrink-0 items-center gap-4 border-b border-line bg-canvas/85 px-7 backdrop-blur-md"
-  >
+  <header class="flex h-14 shrink-0 items-center gap-4 border-b border-line bg-canvas/85 px-7 backdrop-blur-md">
     <div class="flex items-center gap-2 text-[13px] text-ink3">
       <span>外呼管理</span>
       <ChevronRight :size="14" class="opacity-50" />
@@ -42,10 +40,7 @@ const stateMeta = computed(() => {
             class="absolute inline-flex size-full animate-ping rounded-full opacity-60"
             :style="{ backgroundColor: stateMeta.color }"
           />
-          <span
-            class="relative inline-flex size-1.5 rounded-full"
-            :style="{ backgroundColor: stateMeta.color }"
-          />
+          <span class="relative inline-flex size-1.5 rounded-full" :style="{ backgroundColor: stateMeta.color }" />
         </span>
         {{ stateMeta.label }}
       </span>

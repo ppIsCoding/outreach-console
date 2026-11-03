@@ -141,9 +141,19 @@ export function useDeleteTaskMutation() {
 export function useTaskProgressSync() {
   const queryClient = useQueryClient()
   let unsubscribe: (() => void) | null = null
+  const knownStatuses = new Map<string, TaskStatus>()
 
   onMounted(() => {
     unsubscribe = subscribeTaskProgress((payload) => {
+      const previousStatus = knownStatuses.get(payload.taskId)
+      knownStatuses.set(payload.taskId, payload.status)
+
+      // 状态变化时同步刷新 Tab 计数与概览，避免进度条已 100% 但“执行中”仍不变。
+      if (previousStatus && previousStatus !== payload.status) {
+        void queryClient.invalidateQueries({ queryKey: taskKeys.stats })
+        void queryClient.invalidateQueries({ queryKey: taskKeys.summary })
+      }
+
       queryClient.setQueriesData<PageResult<Task>>({ queryKey: taskKeys.all }, (previous) => {
         if (!previous || !Array.isArray(previous.items)) return previous
         return {

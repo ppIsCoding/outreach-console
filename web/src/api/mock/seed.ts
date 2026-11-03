@@ -82,12 +82,10 @@ export function buildSeedTasks(): Task[] {
     const startedAt = ['RUNNING', 'PAUSED', 'COMPLETED', 'FAILED'].includes(status)
       ? shiftMinutes(now, -minutesAgo + 1)
       : null
-    const finishedAt =
-      status === 'COMPLETED' || status === 'FAILED' ? shiftMinutes(now, -minutesAgo + 30) : null
+    const finishedAt = status === 'COMPLETED' || status === 'FAILED' ? shiftMinutes(now, -minutesAgo + 30) : null
     const scheduledAt = status === 'SCHEDULED' ? shiftMinutes(now, Math.max(5, 30 - minutesAgo)) : null
     const updatedAt =
-      finishedAt ??
-      (status === 'PAUSED' ? shiftMinutes(now, -minutesAgo + 10) : (startedAt ?? createdAt))
+      finishedAt ?? (status === 'PAUSED' ? shiftMinutes(now, -minutesAgo + 10) : (startedAt ?? createdAt))
     return {
       id: `T20261103${String(index + 1).padStart(3, '0')}`,
       name,

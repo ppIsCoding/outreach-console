@@ -22,7 +22,7 @@ public class TaskQuery {
     private String scriptId;
 
     /**
-     * today / 7d / 30d / custom。
+     * today / 7d / 30d / all / custom。
      */
     private String dateRange;
 

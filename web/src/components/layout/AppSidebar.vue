@@ -1,14 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import {
-  ChartLine,
-  ListChecks,
-  MessageSquareText,
-  PhoneCall,
-  Settings,
-  Users,
-  LayoutGrid,
-} from 'lucide-vue-next'
+import { ChartLine, ListChecks, MessageSquareText, PhoneCall, Settings, Users, LayoutGrid } from 'lucide-vue-next'
 import { useSummaryQuery } from '@/composables/useTasks'
 import { useUiStore } from '@/stores/ui'
 
@@ -51,19 +43,27 @@ function handleNav(key: string) {
       <div
         class="grid size-[30px] place-items-center rounded-lg bg-gradient-to-br from-[#15857A] to-brand shadow-[0_2px_10px_rgba(11,107,95,0.45)]"
       >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round">
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="#fff"
+          stroke-width="2.2"
+          stroke-linecap="round"
+        >
           <path d="M3 12h2M19 12h2M7 8v8M11 5v14M15 9v6" />
         </svg>
       </div>
       <div>
         <div class="text-sm font-semibold tracking-wide">Outreach</div>
-        <div class="text-[10.5px] uppercase tracking-[0.14em] text-[#6E7887]">Voice Console</div>
+        <div class="text-[10.5px] uppercase tracking-[0.14em] text-[#8E97A6]">Voice Console</div>
       </div>
     </div>
 
     <nav class="flex-1 overflow-y-auto px-3 pb-3">
       <template v-for="group in groups" :key="group.label">
-        <div class="px-2.5 pb-2 pt-3.5 text-[10.5px] uppercase tracking-[0.12em] text-[#5A6371]">
+        <div class="px-2.5 pb-2 pt-3.5 text-[10.5px] uppercase tracking-[0.12em] text-[#8E97A6]">
           {{ group.label }}
         </div>
         <button
@@ -73,9 +73,7 @@ function handleNav(key: string) {
           class="relative flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-[13.5px] transition-colors"
           :aria-current="item.key === 'tasks' ? 'page' : undefined"
           :class="
-            item.key === 'tasks'
-              ? 'bg-[#1D252E] text-white'
-              : 'text-[#8E97A6] hover:bg-sidebar2 hover:text-[#D6DBE3]'
+            item.key === 'tasks' ? 'bg-[#1D252E] text-white' : 'text-[#8E97A6] hover:bg-sidebar2 hover:text-[#D6DBE3]'
           "
           @click="handleNav(item.key)"
         >
@@ -104,7 +102,7 @@ function handleNav(key: string) {
         </span>
         <span>
           <span class="block text-[12.5px] leading-tight text-[#DDE2E9]">李思远</span>
-          <span class="block text-[11px] text-[#6E7887]">外呼运营</span>
+          <span class="block text-[11px] text-[#8E97A6]">外呼运营</span>
         </span>
       </button>
     </div>

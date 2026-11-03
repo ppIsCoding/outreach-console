@@ -451,6 +451,9 @@ public class TaskService {
                     wrapper.ge(Task::getCreatedAt, today.minusDays(6).atStartOfDay());
             case "30d", "30days", "last30days" ->
                     wrapper.ge(Task::getCreatedAt, today.minusDays(29).atStartOfDay());
+            case "all" -> {
+                // 全部时间：不追加时间条件。
+            }
             case "custom" -> {
                 LocalDateTime start = parseBoundary(query.getStartDate(), false, "startDate");
                 LocalDateTime endExclusive = parseBoundary(query.getEndDate(), true, "endDate");
@@ -461,7 +464,7 @@ public class TaskService {
                     wrapper.lt(Task::getCreatedAt, endExclusive);
                 }
             }
-            default -> throw BizException.paramInvalid("dateRange", "dateRange 仅支持 today / 7d / 30d / custom");
+            default -> throw BizException.paramInvalid("dateRange", "dateRange 仅支持 today / 7d / 30d / all / custom");
         }
     }
 

@@ -62,7 +62,9 @@ const remainingText = computed(() => {
     case 'RUNNING': {
       const minutes = Math.max(
         1,
-        Math.round(((task.value.totalContacts - task.value.calledCount) * 45) / 60 / Math.max(1, task.value.concurrency)),
+        Math.round(
+          ((task.value.totalContacts - task.value.calledCount) * 45) / 60 / Math.max(1, task.value.concurrency),
+        ),
       )
       return `剩余约 ${minutes} 分钟`
     }
@@ -141,7 +143,11 @@ function duplicate() {
 </script>
 
 <template>
-  <AppDrawer v-model:open="open" :title="task?.name ?? '任务详情'" :subtitle="task ? `${task.id} · ${task.creatorName} 创建` : ''">
+  <AppDrawer
+    v-model:open="open"
+    :title="task?.name ?? '任务详情'"
+    :subtitle="task ? `${task.id} · ${task.creatorName} 创建` : ''"
+  >
     <template #badge>
       <StatusBadge v-if="task" :status="task.status" class="mt-0.5" />
     </template>
@@ -155,43 +161,45 @@ function duplicate() {
 
     <div v-else-if="detailQuery.isError.value" class="py-16 text-center">
       <p class="text-sm text-ink2">任务详情加载失败</p>
-      <p class="mt-1 text-xs text-ink4">{{ (detailQuery.error.value as Error)?.message }}</p>
+      <p class="mt-1 text-xs text-ink3">{{ (detailQuery.error.value as Error)?.message }}</p>
       <button type="button" class="btn mt-4" @click="detailQuery.refetch()">重试</button>
     </div>
 
     <template v-else-if="task">
       <div class="mb-5 grid grid-cols-2 gap-3">
         <div class="rounded-[9px] border border-line bg-surface2 px-3 py-2.5">
-          <div class="text-[11px] text-ink4">已呼 / 名单</div>
+          <div class="text-[11px] text-ink3">已呼 / 名单</div>
           <div class="num mt-1 text-[13px] font-medium">
             {{ formatNumber(task.calledCount) }} / {{ formatNumber(task.totalContacts) }}
           </div>
         </div>
         <div class="rounded-[9px] border border-line bg-surface2 px-3 py-2.5">
-          <div class="text-[11px] text-ink4">接通率</div>
+          <div class="text-[11px] text-ink3">接通率</div>
           <div class="num mt-1 text-[13px] font-medium">
             {{ task.calledCount ? `${((task.connectedCount / task.calledCount) * 100).toFixed(1)}%` : '—' }}
           </div>
         </div>
         <div class="rounded-[9px] border border-line bg-surface2 px-3 py-2.5">
-          <div class="text-[11px] text-ink4">话术模板</div>
+          <div class="text-[11px] text-ink3">话术模板</div>
           <div class="mt-1 text-[13px] font-medium">{{ task.scriptName }} {{ task.scriptVersion }}</div>
         </div>
         <div class="rounded-[9px] border border-line bg-surface2 px-3 py-2.5">
-          <div class="text-[11px] text-ink4">外呼线路</div>
+          <div class="text-[11px] text-ink3">外呼线路</div>
           <div class="mt-1 text-[13px] font-medium">{{ task.lineName }}</div>
         </div>
         <div class="rounded-[9px] border border-line bg-surface2 px-3 py-2.5">
-          <div class="text-[11px] text-ink4">并发数</div>
+          <div class="text-[11px] text-ink3">并发数</div>
           <div class="num mt-1 text-[13px] font-medium">{{ task.concurrency }}</div>
         </div>
         <div class="rounded-[9px] border border-line bg-surface2 px-3 py-2.5">
-          <div class="text-[11px] text-ink4">呼叫时段</div>
+          <div class="text-[11px] text-ink3">呼叫时段</div>
           <div class="num mt-1 text-[13px] font-medium">{{ task.callWindow }}</div>
         </div>
       </div>
 
-      <h3 class="mb-3 flex items-center gap-2 text-xs font-semibold tracking-wide text-ink2 after:h-px after:flex-1 after:bg-line">
+      <h3
+        class="mb-3 flex items-center gap-2 text-xs font-semibold tracking-wide text-ink2 after:h-px after:flex-1 after:bg-line"
+      >
         进度
       </h3>
       <div class="mb-1.5 flex justify-between text-xs">
@@ -200,11 +208,17 @@ function duplicate() {
       </div>
       <ProgressBar :value="progressOf(task)" :height="6" />
 
-      <h3 class="mb-3 mt-6 flex items-center gap-2 text-xs font-semibold tracking-wide text-ink2 after:h-px after:flex-1 after:bg-line">
+      <h3
+        class="mb-3 mt-6 flex items-center gap-2 text-xs font-semibold tracking-wide text-ink2 after:h-px after:flex-1 after:bg-line"
+      >
         通话结果分布
       </h3>
       <div class="space-y-2.5">
-        <div v-for="item in distribution" :key="item.label" class="grid grid-cols-[64px_1fr_48px] items-center gap-2.5 text-xs">
+        <div
+          v-for="item in distribution"
+          :key="item.label"
+          class="grid grid-cols-[64px_1fr_48px] items-center gap-2.5 text-xs"
+        >
           <span class="text-ink2">{{ item.label }}</span>
           <div class="h-1.5 overflow-hidden rounded-full bg-[#EFEDE7]">
             <div class="h-full rounded-full" :style="{ width: `${item.percent}%`, background: item.color }" />
@@ -213,11 +227,17 @@ function duplicate() {
         </div>
       </div>
 
-      <h3 class="mb-3 mt-6 flex items-center gap-2 text-xs font-semibold tracking-wide text-ink2 after:h-px after:flex-1 after:bg-line">
+      <h3
+        class="mb-3 mt-6 flex items-center gap-2 text-xs font-semibold tracking-wide text-ink2 after:h-px after:flex-1 after:bg-line"
+      >
         意向等级
       </h3>
       <div class="space-y-2.5">
-        <div v-for="item in intents" :key="item.label" class="grid grid-cols-[64px_1fr_48px] items-center gap-2.5 text-xs">
+        <div
+          v-for="item in intents"
+          :key="item.label"
+          class="grid grid-cols-[64px_1fr_48px] items-center gap-2.5 text-xs"
+        >
           <span class="text-ink2">{{ item.label }}</span>
           <div class="h-1.5 overflow-hidden rounded-full bg-[#EFEDE7]">
             <div class="h-full rounded-full" :style="{ width: `${item.percent}%`, background: item.color }" />
@@ -226,18 +246,22 @@ function duplicate() {
         </div>
       </div>
 
-      <h3 class="mb-3 mt-6 flex items-center gap-2 text-xs font-semibold tracking-wide text-ink2 after:h-px after:flex-1 after:bg-line">
+      <h3
+        class="mb-3 mt-6 flex items-center gap-2 text-xs font-semibold tracking-wide text-ink2 after:h-px after:flex-1 after:bg-line"
+      >
         状态流转
       </h3>
-      <ol class="relative pl-5 before:absolute before:bottom-2 before:left-[5px] before:top-1.5 before:w-px before:bg-line">
+      <ol
+        class="relative pl-5 before:absolute before:bottom-2 before:left-[5px] before:top-1.5 before:w-px before:bg-line"
+      >
         <li v-for="event in task.events" :key="event.id" class="relative pb-4 last:pb-0">
           <span class="absolute -left-[18px] top-1 size-[7px] rounded-full border-2 border-brand bg-brand" />
           <div class="text-[12.5px]">{{ event.message }}</div>
-          <div class="num mt-0.5 text-[11px] text-ink4">{{ event.createdAt }}</div>
+          <div class="num mt-0.5 text-[11px] text-ink3">{{ event.createdAt }}</div>
         </li>
       </ol>
 
-      <p class="mt-6 text-[11px] text-ink4">
+      <p class="mt-6 text-[11px] text-ink3">
         累计通话 {{ formatDuration(task.totalDurationSec) }} · 意向客户 {{ formatNumber(task.intentCount) }} 人
       </p>
     </template>

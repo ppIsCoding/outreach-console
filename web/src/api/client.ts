@@ -28,9 +28,15 @@ export async function httpRequest<T>(path: string, init: RequestInit = {}): Prom
       signal: controller.signal,
     })
 
+    if (response.status === 204) return undefined as T
+
     const payload = (await response.json()) as ApiEnvelope<T>
     if (!response.ok || payload.code !== 0) {
-      throw new ApiError(payload.code ?? response.status, payload.message ?? '请求失败')
+      const fields =
+        payload.data && typeof payload.data === 'object' && !Array.isArray(payload.data)
+          ? (payload.data as Record<string, string>)
+          : undefined
+      throw new ApiError(payload.code ?? response.status, payload.message ?? '请求失败', fields)
     }
     return payload.data
   } catch (error) {

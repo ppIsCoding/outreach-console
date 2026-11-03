@@ -53,6 +53,13 @@ export function relativeTime(iso: string): string {
   const now = new Date()
   const diff = (now.getTime() - then.getTime()) / 1000
   if (Number.isNaN(diff)) return iso
+  if (diff < 0) {
+    const ahead = -diff
+    if (ahead < 60) return '即将开始'
+    if (ahead < 3600) return `${Math.ceil(ahead / 60)} 分钟后`
+    if (ahead < 86400) return `${Math.ceil(ahead / 3600)} 小时后`
+    return iso.slice(5, 16)
+  }
   if (diff < 60) return '刚刚'
   if (diff < 3600) return `${Math.floor(diff / 60)} 分钟前`
   if (diff < 86400) return `${Math.floor(diff / 3600)} 小时前`

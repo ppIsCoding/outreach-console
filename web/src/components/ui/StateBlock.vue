@@ -2,7 +2,13 @@
 import { computed } from 'vue'
 import { Ban, Inbox, TriangleAlert } from 'lucide-vue-next'
 
-const { variant = 'empty', title, description, actionLabel, code } = defineProps<{
+const {
+  variant = 'empty',
+  title,
+  description,
+  actionLabel,
+  code,
+} = defineProps<{
   variant?: 'empty' | 'error' | 'denied'
   title: string
   description: string
@@ -30,10 +36,7 @@ const iconClass = computed(() =>
     <div class="text-[14.5px] font-medium">{{ title }}</div>
     <p class="max-w-[340px] text-[12.5px] leading-relaxed text-ink3">{{ description }}</p>
 
-    <span
-      v-if="code"
-      class="rounded bg-[#F2F0EA] px-1.5 py-0.5 font-mono text-[11px] text-ink2"
-    >
+    <span v-if="code" class="rounded bg-[#F2F0EA] px-1.5 py-0.5 font-mono text-[11px] text-ink2">
       {{ code }}
     </span>
 

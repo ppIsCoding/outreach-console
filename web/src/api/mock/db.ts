@@ -125,11 +125,14 @@ export function getTask(id: string): TaskDetail {
 }
 
 function buildEvents(task: Task): TaskEvent[] {
-  const events: TaskEvent[] = [
-    { id: 1, type: 'CREATED', message: '任务创建', createdAt: task.createdAt },
-  ]
+  const events: TaskEvent[] = [{ id: 1, type: 'CREATED', message: '任务创建', createdAt: task.createdAt }]
   if (task.startedAt) {
-    events.push({ id: 2, type: 'SCHEDULED', message: `调度成功 · 分配并发 ${task.concurrency}`, createdAt: task.startedAt })
+    events.push({
+      id: 2,
+      type: 'SCHEDULED',
+      message: `调度成功 · 分配并发 ${task.concurrency}`,
+      createdAt: task.startedAt,
+    })
     events.push({ id: 3, type: 'STARTED', message: '开始执行', createdAt: task.startedAt })
   }
   if (task.status === 'PAUSED') {
@@ -293,7 +296,8 @@ export function listResults(id: string, page = 1, size = 8): PageResult<CallResu
   const total = Math.min(task.calledCount, 240)
   const items: CallResult[] = Array.from({ length: Math.min(size, Math.max(0, total - (page - 1) * size)) }, (_, i) => {
     const seed = (id.charCodeAt(6) * 7 + (page - 1) * size + i) % 100
-    const result = seed < 38 ? 'CONNECTED' : seed < 70 ? 'NO_ANSWER' : seed < 85 ? 'REJECTED' : seed < 95 ? 'INVALID' : 'POWER_OFF'
+    const result =
+      seed < 38 ? 'CONNECTED' : seed < 70 ? 'NO_ANSWER' : seed < 85 ? 'REJECTED' : seed < 95 ? 'INVALID' : 'POWER_OFF'
     return {
       id: (page - 1) * size + i + 1,
       phone: `13${String(seed).padStart(2, '0')}****${String(1000 + seed * 7).slice(-4)}`,
@@ -310,7 +314,12 @@ export function listResults(id: string, page = 1, size = 8): PageResult<CallResu
 /* 实时推进（模拟外呼调度器）                                            */
 /* ------------------------------------------------------------------ */
 
-type ProgressListener = (payload: { taskId: string; calledCount: number; connectedCount: number; status: TaskStatus }) => void
+type ProgressListener = (payload: {
+  taskId: string
+  calledCount: number
+  connectedCount: number
+  status: TaskStatus
+}) => void
 const listeners = new Set<ProgressListener>()
 let timer: ReturnType<typeof setInterval> | null = null
 
@@ -335,7 +344,12 @@ function tick() {
       task.status = 'COMPLETED'
       task.finishedAt = nowStamp()
       listeners.forEach((listener) =>
-        listener({ taskId: task.id, calledCount: task.calledCount, connectedCount: task.connectedCount, status: task.status }),
+        listener({
+          taskId: task.id,
+          calledCount: task.calledCount,
+          connectedCount: task.connectedCount,
+          status: task.status,
+        }),
       )
       continue
     }
@@ -344,7 +358,12 @@ function tick() {
     if (Math.random() < 0.38) task.connectedCount += 1
     if (Math.random() < 0.08) task.intentCount += 1
     listeners.forEach((listener) =>
-      listener({ taskId: task.id, calledCount: task.calledCount, connectedCount: task.connectedCount, status: task.status }),
+      listener({
+        taskId: task.id,
+        calledCount: task.calledCount,
+        connectedCount: task.connectedCount,
+        status: task.status,
+      }),
     )
   }
 }

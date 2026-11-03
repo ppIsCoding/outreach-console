@@ -47,9 +47,7 @@ const totalPages = computed(() => pageData.value?.totalPages ?? 1)
 const denied = computed(() => listQuery.error.value instanceof ApiError && listQuery.error.value.code === 40300)
 const failed = computed(() => listQuery.isError.value && !denied.value)
 const summaryFailed = computed(() => summaryQuery.isError.value)
-const filtered = computed(
-  () => isDirty.value || filters.value.page > 1 || (IS_MOCK && ui.scenario === 'emptyFilter'),
-)
+const filtered = computed(() => isDirty.value || filters.value.page > 1 || (IS_MOCK && ui.scenario === 'emptyFilter'))
 const refreshing = computed(
   () => listQuery.isFetching.value || summaryQuery.isFetching.value || statsQuery.isFetching.value,
 )
@@ -66,9 +64,7 @@ const errorCode = computed(() => {
   }
   return `${error.code} · ${labels[error.code] ?? 'REQUEST_FAILED'}`
 })
-const errorMessage = computed(() =>
-  listError.value instanceof ApiError ? listError.value.message : '',
-)
+const errorMessage = computed(() => (listError.value instanceof ApiError ? listError.value.message : ''))
 
 // 接口会把越界页码夹到最后一页；把真实页码回写到 URL，避免分页器显示 981–24。
 watch(
@@ -96,7 +92,8 @@ const detailOpen = computed({
   },
 })
 
-const confirmState = reactive({  open: false,
+const confirmState = reactive({
+  open: false,
   title: '',
   description: '',
   confirmLabel: '确认',
@@ -120,11 +117,7 @@ function askConfirm(options: {
 }
 
 async function refresh() {
-  const results = await Promise.all([
-    listQuery.refetch(),
-    summaryQuery.refetch(),
-    statsQuery.refetch(),
-  ])
+  const results = await Promise.all([listQuery.refetch(), summaryQuery.refetch(), statsQuery.refetch()])
   if (results.some((result) => result.isError)) {
     ui.toast('刷新失败，请稍后重试', 'error')
     return
@@ -212,9 +205,7 @@ function bulkStatus(action: TaskAction) {
 
   const run = async () => {
     const results = await Promise.allSettled(
-      candidates.map((task) =>
-        statusMutation.mutateAsync({ id: task.id, action, version: task.version }),
-      ),
+      candidates.map((task) => statusMutation.mutateAsync({ id: task.id, action, version: task.version })),
     )
     const succeeded = results.filter((result) => result.status === 'fulfilled').length
     const failed = results.length - succeeded

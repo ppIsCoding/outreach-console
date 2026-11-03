@@ -91,21 +91,46 @@ const showState = computed(() => !loading && (error || denied || tasks.length ==
               @change="emit('toggleAll')"
             />
           </th>
-          <th scope="col" class="h-10 bg-surface2 px-3 text-left text-[11.5px] font-medium tracking-wide text-ink3">任务名称</th>
-          <th scope="col" class="hidden h-10 bg-surface2 px-3 text-left text-[11.5px] font-medium tracking-wide text-ink3 min-[1400px]:table-cell">话术模板</th>
-          <th scope="col" class="h-10 bg-surface2 px-3 text-right text-[11.5px] font-medium tracking-wide text-ink3">名单量</th>
-          <th scope="col" class="h-10 w-[150px] bg-surface2 px-3 text-left text-[11.5px] font-medium tracking-wide text-ink3">执行进度</th>
-          <th scope="col" class="h-10 bg-surface2 px-3 text-right text-[11.5px] font-medium tracking-wide text-ink3">接通率</th>
-          <th scope="col" class="h-10 bg-surface2 px-3 text-left text-[11.5px] font-medium tracking-wide text-ink3">状态</th>
-          <th scope="col" class="h-10 bg-surface2 px-3 text-left text-[11.5px] font-medium tracking-wide text-ink3">计划 / 执行时间</th>
-          <th scope="col" class="h-10 bg-surface2 px-4 text-right text-[11.5px] font-medium tracking-wide text-ink3">操作</th>
+          <th scope="col" class="h-10 bg-surface2 px-3 text-left text-[11.5px] font-medium tracking-wide text-ink3">
+            任务名称
+          </th>
+          <th
+            scope="col"
+            class="hidden h-10 bg-surface2 px-3 text-left text-[11.5px] font-medium tracking-wide text-ink3 min-[1400px]:table-cell"
+          >
+            话术模板
+          </th>
+          <th scope="col" class="h-10 bg-surface2 px-3 text-right text-[11.5px] font-medium tracking-wide text-ink3">
+            名单量
+          </th>
+          <th
+            scope="col"
+            class="h-10 w-[150px] bg-surface2 px-3 text-left text-[11.5px] font-medium tracking-wide text-ink3"
+          >
+            执行进度
+          </th>
+          <th scope="col" class="h-10 bg-surface2 px-3 text-right text-[11.5px] font-medium tracking-wide text-ink3">
+            接通率
+          </th>
+          <th scope="col" class="h-10 bg-surface2 px-3 text-left text-[11.5px] font-medium tracking-wide text-ink3">
+            状态
+          </th>
+          <th scope="col" class="h-10 bg-surface2 px-3 text-left text-[11.5px] font-medium tracking-wide text-ink3">
+            计划 / 执行时间
+          </th>
+          <th scope="col" class="h-10 bg-surface2 px-4 text-right text-[11.5px] font-medium tracking-wide text-ink3">
+            操作
+          </th>
         </tr>
       </thead>
 
       <tbody v-if="loading">
         <tr v-for="index in size" :key="index" class="border-b border-[#EFEDE7]">
           <td class="px-4 py-4"><div class="skeleton size-3.5" /></td>
-          <td class="px-3 py-4"><div class="skeleton h-3.5 w-44" /><div class="skeleton mt-1.5 h-2.5 w-24" /></td>
+          <td class="px-3 py-4">
+            <div class="skeleton h-3.5 w-44" />
+            <div class="skeleton mt-1.5 h-2.5 w-24" />
+          </td>
           <td class="hidden px-3 py-4 min-[1400px]:table-cell"><div class="skeleton h-3 w-20" /></td>
           <td class="px-3 py-4"><div class="skeleton ml-auto h-3 w-12" /></td>
           <td class="px-3 py-4"><div class="skeleton h-1.5 w-full" /></td>
@@ -143,7 +168,7 @@ const showState = computed(() => !loading && (error || denied || tasks.length ==
           <td class="hidden px-3 py-0 min-[1400px]:table-cell">
             <div class="flex flex-col gap-px">
               <span class="whitespace-nowrap text-[12.5px] text-ink2">{{ task.scriptName }}</span>
-              <span class="num text-[10.5px] text-ink4">{{ task.scriptVersion }}</span>
+              <span class="num text-[10.5px] text-ink3">{{ task.scriptVersion }}</span>
             </div>
           </td>
 
@@ -155,7 +180,7 @@ const showState = computed(() => !loading && (error || denied || tasks.length ==
             <div class="flex flex-col gap-1.5 py-2.5">
               <div class="flex items-center justify-between gap-2">
                 <span class="num text-[11px] font-medium text-ink">{{ progressOf(task) }}%</span>
-                <span class="num text-[10.5px] text-ink4">
+                <span class="num text-[10.5px] text-ink3">
                   {{ formatNumber(task.calledCount) }} / {{ formatNumber(task.totalContacts) }}
                 </span>
               </div>
@@ -167,11 +192,7 @@ const showState = computed(() => !loading && (error || denied || tasks.length ==
             <span
               class="num text-[12.5px]"
               :class="
-                connectRateOf(task) === null
-                  ? 'text-ink4'
-                  : connectRateOf(task)! < 20
-                    ? 'text-danger'
-                    : 'text-ink'
+                connectRateOf(task) === null ? 'text-ink4' : connectRateOf(task)! < 20 ? 'text-danger' : 'text-ink'
               "
             >
               {{ connectRateOf(task) === null ? '—' : `${connectRateOf(task)!.toFixed(1)}%` }}

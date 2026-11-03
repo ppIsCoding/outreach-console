@@ -41,12 +41,14 @@ function readFilters(query: Record<string, unknown>): TaskFilters {
     const parsed = Number(value)
     return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback
   }
-  const status = typeof query.status === 'string' && STATUSES.includes(query.status as TaskFilters['status'])
-    ? (query.status as TaskFilters['status'])
-    : DEFAULTS.status
-  const range = typeof query.range === 'string' && RANGES.includes(query.range as DateRange)
-    ? (query.range as DateRange)
-    : DEFAULTS.range
+  const status =
+    typeof query.status === 'string' && STATUSES.includes(query.status as TaskFilters['status'])
+      ? (query.status as TaskFilters['status'])
+      : DEFAULTS.status
+  const range =
+    typeof query.range === 'string' && RANGES.includes(query.range as DateRange)
+      ? (query.range as DateRange)
+      : DEFAULTS.range
   const size = PAGE_SIZES.includes(num(query.size, DEFAULTS.size)) ? num(query.size, DEFAULTS.size) : DEFAULTS.size
 
   return {
@@ -61,7 +63,7 @@ function readFilters(query: Record<string, unknown>): TaskFilters {
 
 /**
  * 筛选条件的唯一真源是 URL。
- * 好处：可分享、可刷新、可截图还原、浏览器前进后退可用。
+ * 好处：可分享、可刷新、可截图还原；使用 replace 避免筛选产生大量历史记录。
  */
 export function useTaskFilters() {
   const route = useRoute()

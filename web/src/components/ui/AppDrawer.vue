@@ -1,17 +1,14 @@
 <script setup lang="ts">
-import {
-  DialogContent,
-  DialogDescription,
-  DialogOverlay,
-  DialogPortal,
-  DialogRoot,
-  DialogTitle,
-} from 'reka-ui'
+import { DialogContent, DialogDescription, DialogOverlay, DialogPortal, DialogRoot, DialogTitle } from 'reka-ui'
 import { X } from 'lucide-vue-next'
 
 const open = defineModel<boolean>('open', { required: true })
 
-const { title, subtitle = '', width = '620px' } = defineProps<{
+const {
+  title,
+  subtitle = '',
+  width = '620px',
+} = defineProps<{
   title: string
   subtitle?: string
   width?: string
