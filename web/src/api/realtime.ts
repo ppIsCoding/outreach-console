@@ -1,6 +1,12 @@
+import { ref } from 'vue'
 import { IS_MOCK } from './index'
 import { subscribeProgress } from './mock/db'
 import type { TaskStatus } from './types'
+
+export type ConnectionState = 'mock' | 'connecting' | 'live' | 'offline'
+
+/** 顶栏“实时同步”指示器的真实连接状态。 */
+export const connectionState = ref<ConnectionState>(IS_MOCK ? 'mock' : 'connecting')
 
 export interface ProgressPayload {
   taskId: string
@@ -15,7 +21,10 @@ export interface ProgressPayload {
  * - http 模式：连接 Spring Boot 的 /ws/tasks，断线指数退避重连
  */
 export function subscribeTaskProgress(onMessage: (payload: ProgressPayload) => void): () => void {
-  if (IS_MOCK) return subscribeProgress(onMessage)
+  if (IS_MOCK) {
+    connectionState.value = 'mock'
+    return subscribeProgress(onMessage)
+  }
 
   let socket: WebSocket | null = null
   let closed = false
@@ -23,11 +32,13 @@ export function subscribeTaskProgress(onMessage: (payload: ProgressPayload) => v
   let reconnectTimer: ReturnType<typeof setTimeout> | null = null
 
   const connect = () => {
+    connectionState.value = 'connecting'
     const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws'
     socket = new WebSocket(`${protocol}://${window.location.host}/ws/tasks`)
 
     socket.onopen = () => {
       attempt = 0
+      connectionState.value = 'live'
       socket?.send(JSON.stringify({ type: 'subscribe', taskIds: [] }))
     }
 
@@ -48,6 +59,7 @@ export function subscribeTaskProgress(onMessage: (payload: ProgressPayload) => v
 
     socket.onclose = () => {
       if (closed) return
+      connectionState.value = 'offline'
       const wait = Math.min(30_000, 1000 * 2 ** attempt)
       attempt += 1
       reconnectTimer = setTimeout(connect, wait)
@@ -58,6 +70,7 @@ export function subscribeTaskProgress(onMessage: (payload: ProgressPayload) => v
 
   return () => {
     closed = true
+    connectionState.value = 'offline'
     if (reconnectTimer) clearTimeout(reconnectTimer)
     socket?.close()
   }

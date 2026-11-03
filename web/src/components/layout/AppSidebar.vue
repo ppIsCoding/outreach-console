@@ -71,11 +71,13 @@ function handleNav(key: string) {
           :key="item.key"
           type="button"
           class="relative flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-[13.5px] transition-colors"
+          :aria-current="item.key === 'tasks' ? 'page' : undefined"
           :class="
             item.key === 'tasks'
               ? 'bg-[#1D252E] text-white'
               : 'text-[#8E97A6] hover:bg-sidebar2 hover:text-[#D6DBE3]'
           "
+          @click="handleNav(item.key)"
         >
           <span
             v-if="item.key === 'tasks'"
@@ -84,11 +86,10 @@ function handleNav(key: string) {
           <component :is="item.icon" :size="16" :stroke-width="1.6" class="shrink-0 opacity-90" />
           <span>{{ item.label }}</span>
           <span
-            v-if="item.badge"
-            class="ml-auto rounded-full px-1.5 py-px font-mono text-[10.5px]"
-            :class="item.key === 'tasks' ? 'bg-[#2FB3A0]/18 text-[#5FD3C2]' : 'bg-[#2A323D] text-[#9AA4B2]'"
+            v-if="item.key === 'tasks' && taskBadge"
+            class="ml-auto rounded-full bg-[#2FB3A0]/18 px-1.5 py-px font-mono text-[10.5px] text-[#5FD3C2]"
           >
-            {{ item.badge }}
+            {{ taskBadge }}
           </span>
         </button>
       </template>

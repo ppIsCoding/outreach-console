@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
 import { Check, Info, TriangleAlert, Upload } from 'lucide-vue-next'
+import { ApiError } from '@/api/client'
 import type { CreateTaskPayload, TaskPriority } from '@/api/types'
 import { useCreateTaskMutation, useLinesQuery, useScriptsQuery } from '@/composables/useTasks'
 import { formatEstimate, formatNumber } from '@/lib/utils'
