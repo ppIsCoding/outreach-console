@@ -5,6 +5,9 @@ node_modules/
 dist/
 target/
 
+# vercel
+.vercel/
+
 # runtime data
 server/data/
 *.log

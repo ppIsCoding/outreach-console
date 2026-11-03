@@ -9,6 +9,7 @@
     "dev:api": "vite --mode api",
     "build": "tsc && vite build",
     "build:mock": "tsc && vite build --mode development",
+    "build:pages": "tsc && vite build --base=/outreach-console/ && node scripts/postbuild-pages.mjs",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
