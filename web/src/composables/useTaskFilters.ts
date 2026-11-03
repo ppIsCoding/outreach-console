@@ -1,0 +1,81 @@
+import { computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import type { TaskQuery } from '@/api/types'
+
+export type DateRange = NonNullable<TaskQuery['range']>
+
+export interface TaskFilters {
+  status: NonNullable<TaskQuery['status']>
+  keyword: string
+  scriptId: string
+  range: DateRange
+  page: number
+  size: number
+}
+
+const DEFAULTS: TaskFilters = {
+  status: 'ALL',
+  keyword: '',
+  scriptId: '',
+  range: '7d',
+  page: 1,
+  size: 10,
+}
+
+function readFilters(query: Record<string, unknown>): TaskFilters {
+  const num = (value: unknown, fallback: number) => {
+    const parsed = Number(value)
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback
+  }
+  return {
+    status: (query.status as TaskFilters['status']) || DEFAULTS.status,
+    keyword: typeof query.q === 'string' ? query.q : '',
+    scriptId: typeof query.script === 'string' ? query.script : '',
+    range: (query.range as DateRange) || DEFAULTS.range,
+    page: num(query.page, 1),
+    size: num(query.size, 10),
+  }
+}
+
+/**
+ * 筛选条件的唯一真源是 URL。
+ * 好处：可分享、可刷新、可截图还原、浏览器前进后退可用。
+ */
+export function useTaskFilters() {
+  const route = useRoute()
+  const router = useRouter()
+
+  const filters = computed<TaskFilters>(() => readFilters(route.query))
+
+  const isDirty = computed(
+    () =>
+      filters.value.status !== DEFAULTS.status ||
+      filters.value.keyword !== '' ||
+      filters.value.scriptId !== '' ||
+      filters.value.range !== DEFAULTS.range,
+  )
+
+  function apply(next: Partial<TaskFilters>, options: { resetPage?: boolean } = {}) {
+    const merged: TaskFilters = {
+      ...filters.value,
+      ...next,
+      page: options.resetPage === false ? (next.page ?? filters.value.page) : (next.page ?? 1),
+    }
+
+    const query: Record<string, string> = {}
+    if (merged.status !== DEFAULTS.status) query.status = merged.status
+    if (merged.keyword) query.q = merged.keyword
+    if (merged.scriptId) query.script = merged.scriptId
+    if (merged.range !== DEFAULTS.range) query.range = merged.range
+    if (merged.page > 1) query.page = String(merged.page)
+    if (merged.size !== DEFAULTS.size) query.size = String(merged.size)
+
+    void router.replace({ query })
+  }
+
+  function reset() {
+    void router.replace({ query: {} })
+  }
+
+  return { filters, isDirty, apply, reset }
+}

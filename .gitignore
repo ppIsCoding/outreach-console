@@ -1,0 +1,20 @@
+# dependencies
+node_modules/
+
+# build output
+dist/
+target/
+
+# runtime data
+server/data/
+*.log
+
+# editors / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# env
+.env.local
+.env.*.local

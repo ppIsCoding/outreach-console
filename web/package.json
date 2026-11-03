@@ -1,0 +1,50 @@
+{
+  "name": "outreach-console-web",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "dev:mock": "vite",
+    "dev:api": "vite --mode api",
+    "build": "tsc && vite build",
+    "build:mock": "tsc && vite build --mode development",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write \"src/**/*.{ts,vue,css}\""
+  },
+  "dependencies": {
+    "@fontsource/ibm-plex-mono": "^5.3.0",
+    "@fontsource/ibm-plex-sans": "^5.3.0",
+    "@tanstack/vue-query": "^5.105.3",
+    "@vue/devtools-api": "^8.2.1",
+    "clsx": "^2.1.1",
+    "echarts": "^6.1.0",
+    "lucide-vue-next": "^1.0.0",
+    "pinia": "^4.1.0",
+    "reka-ui": "^2.11.0",
+    "tailwind-merge": "^3.7.0",
+    "vue": "^3.5.44",
+    "vue-router": "^4.6.4"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@tailwindcss/vite": "^4.3.4",
+    "@types/node": "^26.6.6",
+    "@vitejs/plugin-vue": "^6.0.10",
+    "eslint": "^10.14.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-vue": "^10.12.0",
+    "prettier": "^3.9.10",
+    "tailwindcss": "^4.3.4",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.72.1",
+    "vite": "^8.3.5",
+    "vitest": "^5.1.0",
+    "vue-eslint-parser": "^10.4.1",
+    "vue-tsc": "^3.3.14"
+  }
+}
