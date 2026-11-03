@@ -5,7 +5,11 @@ import type { Summary } from '@/api/types'
 import { formatNumber, formatPercent } from '@/lib/utils'
 import ProgressBar from '@/components/ui/ProgressBar.vue'
 
-const { summary, loading = false, failed = false } = defineProps<{
+const {
+  summary,
+  loading = false,
+  failed = false,
+} = defineProps<{
   summary?: Summary
   loading?: boolean
   failed?: boolean
@@ -23,7 +27,7 @@ const ringOffset = computed(() => {
 
 const sparkline = computed(() => {
   const values = summary?.sparkline ?? []
-  if (values.length < 2) return { line: '', area: '' }
+  if (values.length < 2 || values.every((value) => value === 0)) return { line: '', area: '' }
 
   const width = 320
   const height = 74
@@ -46,9 +50,11 @@ const deltaUp = computed(() => (summary?.todayCallsDelta ?? 0) >= 0)
 </script>
 
 <template>
-  <section class="mb-3.5 grid grid-cols-12 gap-3.5" aria-label="今日外呼概览">
+  <section class="@container mb-3.5 grid grid-cols-12 gap-3.5" aria-label="今日外呼概览">
     <!-- 主指标：今日外呼量 -->
-    <div class="card col-span-12 flex flex-col overflow-hidden px-5 pb-[18px] pt-4.5 lg:col-span-6 xl:col-span-5">
+    <div
+      class="card col-span-12 flex flex-col overflow-hidden px-5 pb-[18px] pt-4.5 @min-[800px]:col-span-5"
+    >
       <div class="flex items-center gap-1.5 text-xs text-ink3">
         今日外呼量
         <Info
@@ -66,9 +72,7 @@ const deltaUp = computed(() => (summary?.todayCallsDelta ?? 0) >= 0)
 
       <div v-else-if="failed" class="mt-4 flex items-center gap-2 text-[13px] text-ink3">
         <span class="font-mono text-2xl text-ink4">--</span>
-        <button type="button" class="btn btn-sm" @click="emit('retry')">
-          <RefreshCw :size="13" /> 重试
-        </button>
+        <button type="button" class="btn btn-sm" @click="emit('retry')"><RefreshCw :size="13" /> 重试</button>
       </div>
 
       <template v-else>
@@ -81,7 +85,7 @@ const deltaUp = computed(() => (summary?.todayCallsDelta ?? 0) >= 0)
             <component :is="deltaUp ? ArrowUpRight : ArrowDownRight" :size="11" :stroke-width="2.5" />
             {{ Math.abs(summary?.todayCallsDelta ?? 0).toFixed(1) }}%
           </div>
-          <div class="mb-1 text-[11.5px] text-ink4">较昨日</div>
+          <div class="mb-1 text-[11.5px] text-ink3">较昨日</div>
         </div>
 
         <div class="-mx-5 -mb-[18px] mt-auto pt-2.5">
@@ -100,7 +104,7 @@ const deltaUp = computed(() => (summary?.todayCallsDelta ?? 0) >= 0)
     </div>
 
     <!-- 接通率 -->
-    <div class="card col-span-12 px-5 py-4.5 lg:col-span-6 xl:col-span-3">
+    <div class="card col-span-12 px-5 py-4.5 @min-[560px]:col-span-6 @min-[800px]:col-span-3">
       <div class="text-xs text-ink3">今日接通率</div>
 
       <div v-if="loading" class="mt-3 flex items-center gap-3">
@@ -152,7 +156,7 @@ const deltaUp = computed(() => (summary?.todayCallsDelta ?? 0) >= 0)
             未接通
             <span class="num ml-auto pl-2 font-medium text-ink">{{ formatNumber(summary?.unansweredCount) }}</span>
           </div>
-          <div class="mt-0.5 whitespace-nowrap text-[11px] text-ink4">
+          <div class="mt-0.5 whitespace-nowrap text-[11px] text-ink3">
             行业均值 {{ formatPercent(summary?.connectRateBaseline) }}
           </div>
         </div>
@@ -160,7 +164,7 @@ const deltaUp = computed(() => (summary?.todayCallsDelta ?? 0) >= 0)
     </div>
 
     <!-- 执行中任务 -->
-    <div class="card col-span-12 px-5 py-4.5 lg:col-span-12 xl:col-span-4">
+    <div class="card col-span-12 px-5 py-4.5 @min-[560px]:col-span-6 @min-[800px]:col-span-4">
       <div class="text-xs text-ink3">执行中任务</div>
 
       <div v-if="loading" class="mt-3 space-y-3">
@@ -177,15 +181,11 @@ const deltaUp = computed(() => (summary?.todayCallsDelta ?? 0) >= 0)
       <template v-else>
         <div class="mt-1.5 flex items-baseline gap-2.5">
           <div class="num text-2xl font-semibold leading-none">{{ summary?.runningCount ?? 0 }}</div>
-          <div class="text-[11.5px] text-ink4">
+          <div class="text-[11.5px] text-ink3">
             占用并发 <span class="num">{{ summary?.concurrencyUsed ?? 0 }}</span> /
             <span class="num">{{ summary?.concurrencyTotal ?? 0 }}</span>
           </div>
-          <button
-            type="button"
-            class="ml-auto text-[11.5px] text-brand hover:underline"
-            @click="emit('filterRunning')"
-          >
+          <button type="button" class="ml-auto text-[11.5px] text-brand hover:underline" @click="emit('filterRunning')">
             查看全部
           </button>
         </div>
@@ -199,7 +199,7 @@ const deltaUp = computed(() => (summary?.todayCallsDelta ?? 0) >= 0)
             <ProgressBar :value="task.progress" />
           </div>
 
-          <div v-if="!summary?.runningTasks?.length" class="py-3 text-center text-xs text-ink4">
+          <div v-if="!summary?.runningTasks?.length" class="py-3 text-center text-xs text-ink3">
             当前没有正在执行的任务
           </div>
         </div>
