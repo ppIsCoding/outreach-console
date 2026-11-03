@@ -122,6 +122,7 @@ outreach-console/
 │   ├── 05-设计决策记录.md   Skill 评审的采纳 / 不采纳依据
 │   ├── 06-AI协作记录.md     AI 生成 → 审查 → 修复的真实过程
 │   ├── 07-开发进度.md       完成度、验证记录与待办
+│   ├── 08-提交材料.md       提交清单、JD 对照、邮件正文、演示分镜
 │   └── screenshots/
 └── README.md
 ```
@@ -147,6 +148,31 @@ outreach-console/
 - 哪些部分适合交给 AI（脚手架、CRUD、样式初稿、测试用例）
 - 哪些必须人工把关（状态机、竞态、可访问性、接口契约）
 - 5 个「AI 产出有问题 → 发现 → 修复」的具体案例（带前后对比）
+
+---
+
+## 部署（在线预览）
+
+前端已内置部署配置，根目录选 `web` 即可，无需额外设置：
+
+**Vercel**
+
+```bash
+cd web
+npx vercel --prod
+# 或：Vercel 控制台导入仓库 → Root Directory 填 web → 自动识别 vercel.json
+```
+
+**Netlify**
+
+```bash
+cd web
+npx netlify deploy --prod --dir=dist
+# 或：导入仓库 → Base directory 填 web → 自动读取 netlify.toml
+```
+
+> 生产构建固定 `VITE_API_MODE=mock`（见 `.env.production`），
+> 因此在线预览不需要后端也能完整演示，包括「演示状态」切换。
 
 ---
 
