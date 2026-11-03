@@ -3,6 +3,9 @@
 面向外呼运营的批量任务控制台：**创建任务 → 监控进度 → 处置异常 → 查看结果**。
 前端 Vue 3 + TypeScript，后端 Spring Boot 3（可选启动），默认以 mock 数据运行，开箱即用。
 
+**代码仓库**：https://github.com/ppIsCoding/outreach-console
+**在线预览**：部署后补充（构建已固定 mock 模式，无需后端）
+
 ![看板总览](docs/screenshots/01-dashboard.png)
 
 ---
